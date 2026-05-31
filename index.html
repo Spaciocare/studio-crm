@@ -517,6 +517,7 @@ const SECTIONS=[
     {key:'call_status',label:'Call Status',type:'select',options:['','Connected','DNP1','DNP2','DNP3','DNP>3','Not Reachable','Invalid Number','Incorrect Number','Fake Lead']},
     {key:'connected_call_status',label:'Connected Call Status',type:'select',options:['','Lead Qualified','Lead Not Qualified','Call Back']},
     {key:'final_lead_status',label:'Final Lead Status',type:'select',options:['','Cold','Warm','Hot','Won','Dead']},
+    {key:'floor_plan_status',label:'Floor Plan Status',type:'select',options:['','Received','Not Received','Yet to Share','Not Available']},
   ]},
   {title:'Sales & Architect Team',fields:[
     {key:'architect_call_date',label:'Architect Call Date',type:'date'},
@@ -554,7 +555,7 @@ const ALL_FIELDS=SECTIONS.flatMap(s=>s.fields);
 
 // Team group default field assignments
 const DEFAULT_GROUPS={
-  calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','comments'],
+  calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','floor_plan_status','comments'],
   sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','architect_call_date','architect_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','final_lead_status','comments'],
   design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','requirement_connect','design_stage','final_design_stage','final_quote_status','final_project_value','final_quoted_sqft','comments'],
   project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
@@ -1514,6 +1515,7 @@ function processImportRows(rows){
       'Requirement Comment':'requirement_comment',
       'Quote Status':'quote_status',
       'Comments':'comments',
+      'Floor Plan Status':'floor_plan_status',
       'Total Quoted Sq.ft':'total_quoted_sqft',
       'Requirement Connect':'requirement_connect',
       'Design Stage':'design_stage',
