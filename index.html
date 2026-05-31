@@ -524,7 +524,7 @@ const SECTIONS=[
     {key:'architect_call_status',label:'Architect Call Status',type:'select',options:['','Requirement Collected','Not Connected','Partially Collected']},
     {key:'requirements',label:'Requirements',type:'multiselect',options:['Foyer','TV Unit','Sofa wall','False Ceiling','Crockery Unit','Pooja Unit','Wardrobes','Vanity Unit','Others']},
     {key:'requirement_comment',label:'Requirement Comment',type:'textarea'},
-    {key:'quote_status',label:'Quote Status',type:'select',options:['','Yet to Prepare','Quoted','Quote Accepted','Quote Rejected','30% Payment Collected']},
+    {key:'quote_status',label:'Quote Status',type:'select',options:['','Yet to Prepare','Quoted','Quote Accepted','Quote Rejected']},
     {key:'bd_team_lead_status',label:'BD Team Lead Status',type:'select',options:['','Cold','Warm','Hot','Won','Dead']},
     {key:'payment_status',label:'Payment Status',type:'select',options:['','10% Received','20% Received','30% Received']},
   ]},
@@ -535,9 +535,11 @@ const SECTIONS=[
     {key:'total_quoted_sqft',label:'Total Quoted Sq.ft',type:'text',placeholder:'e.g. 1200'},
   ]},
   {title:'Design Team',fields:[
+    {key:'design_entry_date',label:'Design Entry Date',type:'date'},
+    {key:'design_tat',label:'Design TAT (Days)',type:'text',placeholder:'Auto calculated'},
     {key:'requirement_connect',label:'Requirement Connect',type:'select',options:['','Pending','Completed']},
     {key:'design_stage',label:'Design Stage',type:'select',options:['','Started','In-Progress','Completed']},
-    {key:'final_design_stage',label:'Final Design Stage',type:'select',options:['','Shell Preparation','Initial Design','1st Iteration','2nd Iteration','3rd Iteration','4th Iteration','5th Iteration','5+ Iterations','Design Approved by Client','Material Selection','Rendering & VR Completed','Client Approved - Email','Design Completed']},
+    {key:'final_design_stage',label:'Final Design Stage',type:'select',options:['','Shell Preparation','Initial Design','BOQ Preparation','1st Iteration','2nd Iteration','3rd Iteration','4th Iteration','5th Iteration','5+ Iterations','Design Approved by Client','Material Selection','Rendering & VR Completed','Client Approved - Email','Design Completed']},
     {key:'final_quote_status',label:'Final Quote Status',type:'select',options:['','Prepared','Sent to the Client','Reworking','Client Approved','70% Payment Collected']},
     {key:'final_project_value',label:'Final Project Value (INR)',type:'text',placeholder:'e.g. 15,00,000'},
     {key:'final_quoted_sqft',label:'Final Quoted Sq.ft',type:'text',placeholder:'e.g. 1200'},
@@ -559,7 +561,7 @@ const ALL_FIELDS=SECTIONS.flatMap(s=>s.fields);
 const DEFAULT_GROUPS={
   calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','floor_plan_status','comments'],
   sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','architect_call_date','architect_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','bd_team_lead_status','payment_status','final_lead_status','comments'],
-  design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','requirement_connect','design_stage','final_design_stage','final_quote_status','final_project_value','final_quoted_sqft','comments'],
+  design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','design_entry_date','design_tat','requirement_connect','design_stage','final_design_stage','final_quote_status','final_project_value','final_quoted_sqft','comments'],
   project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
 };
 
@@ -1119,6 +1121,9 @@ function buildField(f,val=''){
     input=`<textarea id="lf-${f.key}" placeholder="${f.placeholder||''}" style="min-height:60px;">${val}</textarea>`;
   }else if(f.type==='multiselect'){
     input=`<div id="ms-${f.key}" class="multi-select">${(f.options||[]).map(o=>`<span class="ms-chip" data-val="${o}">${o}</span>`).join('')}</div>`;
+  }else if(f.key==='design_tat'){
+    // Read-only auto-calculated field
+    input=`<input id="lf-${f.key}" type="text" value="${val}" placeholder="Auto calculated" readonly style="background:#f5f4f0;color:#888;cursor:not-allowed;">`;
   }else{
     input=`<input id="lf-${f.key}" type="${f.type}" value="${val}" placeholder="${f.placeholder||''}">`;
   }
@@ -1165,6 +1170,10 @@ async function saveLead(){
   if(isViewOnly()){ toast('View only access — cannot add leads.'); return; }
   const data=getLeadFormData();
   if(!data.name){toast('Name is required');return;}
+  // Auto-set design_entry_date if payment already selected on add
+  if(['10% Received','20% Received','30% Received'].includes(data.payment_status) && !data.design_entry_date){
+    data.design_entry_date = new Date().toISOString().slice(0,10);
+  }
   const{error}=await sb.from('leads').insert(data);
   if(error){toast('Error: '+error.message);return;}
   closeAllModals();toast('Lead added!');await loadAll();
@@ -1527,6 +1536,8 @@ function processImportRows(rows){
       'Comments':'comments',
       'Floor Plan Status':'floor_plan_status',
       'BD Team Lead Status':'bd_team_lead_status',
+      'Design Entry Date':'design_entry_date',
+      'Design TAT (Days)':'design_tat',
       'Payment Status':'payment_status',
       'Total Quoted Sq.ft':'total_quoted_sqft',
       'Requirement Connect':'requirement_connect',
