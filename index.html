@@ -343,7 +343,7 @@ tr.clickable:hover td{background:#fafafa;}
 
   <div class="modal hidden" id="modal-import-leads">
     <div class="modal-title">Bulk import leads <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
-    <div class="modal-sub">Upload a CSV or Excel file to import multiple leads at once</div>
+    <div class="modal-sub">Upload an Excel file (.xlsx) to import multiple leads at once</div>
 
     <div id="import-step-1">
       <div style="border:2px dashed #ddd;border-radius:12px;padding:32px;text-align:center;cursor:pointer;background:#fafafa;" onclick="document.getElementById('import-file-input').click()" id="drop-zone">
@@ -1030,53 +1030,57 @@ function processImportRows(rows){
   const fileHeaders = Object.keys(rows[0]);
 
   function matchKey(header){
+    // Direct mapping of exact column names from Spacioworks export/template
+    const EXACT_MAP = {
+      'Lead ID':'lead_id',
+      'Created Time':'created_time',
+      'Ad ID':'ad_id',
+      'Ad Name':'ad_name',
+      'Adset ID':'adset_id',
+      'Adset Name':'adset_name',
+      'Campaign ID':'campaign_id',
+      'Campaign Name':'campaign_name',
+      'Form ID':'form_id',
+      'Form Name':'form_name',
+      'Is Organic':'is_organic',
+      'Lead Source':'lead_source',
+      'Property Type':'property_type',
+      'Property Segment':'property_segment',
+      'Property Specification':'property_specification',
+      'City':'city',
+      'Builder Name':'builder_name',
+      'Project Name':'project_name',
+      'Unit & Street':'unit_street',
+      'Location/Area':'location_area',
+      'Pincode':'pincode',
+      'Interior Budget':'interior_budget',
+      'Expected Handover Date':'expected_handover_date',
+      'Name':'name',
+      'Email ID':'email',
+      'Phone':'phone',
+      'WhatsApp Number':'whatsapp',
+      'First Call Date':'first_call_date',
+      'Recent Call Date':'recent_call_date',
+      'Call Status':'call_status',
+      'Connected Call Status':'connected_call_status',
+      'Final Lead Status':'final_lead_status',
+      'Architect Call Date':'architect_call_date',
+      'Architect Call Status':'architect_call_status',
+      'Requirements':'requirements',
+      'Requirement Comment':'requirement_comment',
+      'Quote Status':'quote_status',
+      'Comments':'comments',
+    };
+    if(EXACT_MAP[header]) return EXACT_MAP[header];
+
+    // Fallback: cleaned key match
     const h = header.toLowerCase().trim();
     const hClean = h.replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
-
-    // 1. Exact key match (e.g. "unit_street")
-    let match = ALL_FIELDS.find(f=>f.key===header||f.key===h||f.key===hClean);
+    let match = ALL_FIELDS.find(f=>f.key===hClean);
     if(match) return match.key;
 
-    // 2. Exact label match (e.g. "Unit & Street")
+    // Fallback: label match
     match = ALL_FIELDS.find(f=>f.label.toLowerCase()===h);
-    if(match) return match.key;
-
-    // 3. Label cleaned match (e.g. "unit___street" -> "unit_street")
-    match = ALL_FIELDS.find(f=>{
-      const lClean = f.label.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
-      return lClean===hClean;
-    });
-    if(match) return match.key;
-
-    // 4. Common alias mappings
-    const aliases={
-      'mobile':'phone','mobile_number':'phone','contact':'phone','contact_number':'phone',
-      'whatsapp_number':'whatsapp','wa_number':'whatsapp',
-      'full_name':'name','customer_name':'name','client_name':'name','lead_name':'name',
-      'mail':'email','email_id':'email','email_address':'email',
-      'status':'final_lead_status','lead_status':'final_lead_status',
-      'source':'lead_source','lead_source_type':'lead_source',
-      'budget':'interior_budget','project_budget':'interior_budget',
-      'handover':'expected_handover_date','handover_date':'expected_handover_date',
-      'property':'property_type','prop_type':'property_type',
-      'segment':'property_segment','prop_segment':'property_segment',
-      'specification':'property_specification','bhk':'property_specification','prop_spec':'property_specification',
-      'builder':'builder_name','project':'project_name',
-      'area':'location_area','locality':'location_area','location':'location_area',
-      'pin':'pincode','pin_code':'pincode','zip':'pincode',
-      'unit':'unit_street','street':'unit_street','unit_street':'unit_street','unit___street':'unit_street',
-      'campaign':'campaign_name','adset':'adset_name','ad':'ad_name','form':'form_name',
-      'organic':'is_organic','call_date':'first_call_date','architect':'architect_call_status',
-      'requirement':'requirements','req':'requirements',
-      'quote':'quote_status','comment':'comments','remark':'comments','remarks':'comments',
-      'first_call':'first_call_date','recent_call':'recent_call_date','last_call':'recent_call_date',
-      'call':'call_status','connected_status':'connected_call_status',
-      'architect_status':'architect_call_status','arch_date':'architect_call_date',
-    };
-    if(aliases[hClean]) return aliases[hClean];
-
-    // 5. Fuzzy — check if cleaned header contains a key or vice versa
-    match = ALL_FIELDS.find(f=>hClean.includes(f.key)||f.key.includes(hClean));
     if(match) return match.key;
 
     return null;
