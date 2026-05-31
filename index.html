@@ -437,10 +437,30 @@ const SECTIONS=[
     {key:'architect_call_status',label:'Architect Call Status',type:'select',options:['','Requirement Collected','Not Connected']},
     {key:'requirements',label:'Requirements',type:'multiselect',options:['Foyer','TV Unit','Sofa wall','False Ceiling','Crockery Unit','Pooja Unit','Wardrobes','Vanity Unit','Others']},
     {key:'requirement_comment',label:'Requirement Comment',type:'textarea'},
-    {key:'quote_status',label:'Quote Status',type:'select',options:['','Yet to Prepare','Quoted']},
+    {key:'quote_status',label:'Quote Status',type:'select',options:['','Yet to Prepare','Quoted','Quote Accepted','30% Payment Collected']},
   ]},
   {title:'General',fields:[
     {key:'comments',label:'Comments',type:'textarea'},
+  ]},
+  {title:'Quote & Project',fields:[
+    {key:'total_quoted_sqft',label:'Total Quoted Sq.ft',type:'text',placeholder:'e.g. 1200'},
+  ]},
+  {title:'Design Team',fields:[
+    {key:'requirement_connect',label:'Requirement Connect',type:'select',options:['','Pending','Completed']},
+    {key:'design_stage',label:'Design Stage',type:'select',options:['','Started','In-Progress','Completed']},
+    {key:'final_design_stage',label:'Final Design Stage',type:'select',options:['','Shell Preparation','Initial Design','1st Iteration','2nd Iteration','3rd Iteration','4th Iteration','5th Iteration','5+ Iterations','Design Approved by Client','Material Selection','Rendering & VR Completed','Client Approved - Email','Design Completed']},
+    {key:'final_quote_status',label:'Final Quote Status',type:'select',options:['','Prepared','Sent to the Client','Reworking','Client Approved','70% Payment Collected']},
+    {key:'final_project_value',label:'Final Project Value (INR)',type:'text',placeholder:'e.g. 15,00,000'},
+    {key:'final_quoted_sqft',label:'Final Quoted Sq.ft',type:'text',placeholder:'e.g. 1200'},
+  ]},
+  {title:'Project Management',fields:[
+    {key:'production_stage',label:'Production Stage',type:'select',options:['','In Factory','Production Completed','100% Collected','In-transit','Delivered']},
+    {key:'estimated_production_date',label:'Estimated Production Complete Date',type:'date'},
+    {key:'estimated_delivery_date',label:'Estimated Delivery Date',type:'date'},
+    {key:'execution_start_date',label:'Execution Starting Date',type:'date'},
+    {key:'execution_end_date',label:'Execution End Date',type:'date'},
+    {key:'execution_stage',label:'Execution Stage',type:'select',options:['','Installation In-Progress','Installation Completed']},
+    {key:'final_project_stage',label:'Final Project Stage',type:'select',options:['','Pending Snag','Client Approved','Handover Certificate is Given']},
   ]},
 ];
 
@@ -449,9 +469,9 @@ const ALL_FIELDS=SECTIONS.flatMap(s=>s.fields);
 // Team group default field assignments
 const DEFAULT_GROUPS={
   calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','comments'],
-  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','architect_call_date','architect_call_status','requirements','requirement_comment','quote_status','final_lead_status','comments'],
-  design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','comments'],
-  project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','final_lead_status','comments'],
+  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','architect_call_date','architect_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','final_lead_status','comments'],
+  design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','requirement_connect','design_stage','final_design_stage','final_quote_status','final_project_value','final_quoted_sqft','comments'],
+  project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
 };
 
 let state={view:'dashboard',selectedLead:null,selectedTab:'notes',leads:[],notes:[],fieldVisible:{},groupFields:{...DEFAULT_GROUPS},charts:{}};
@@ -702,7 +722,32 @@ function renderLeadDetail(){
   if(state.selectedTab==='notes'){
     tabContent=notes.length?notes.map(n=>`<div class="note-item"><div class="note-meta">${fmtDate(n.created_at)}</div><div class="note-text">${n.text}</div></div>`).join(''):`<div class="empty">No notes yet.</div>`;
   }
-  document.getElementById('lead-detail-content').innerHTML=`
+  // Stage progress bar
+  const stages=[
+    {key:'calling',label:'Calling',check:l=>true,done:l=>l.connected_call_status==='Lead Qualified'},
+    {key:'sales',label:'Sales & Architect',check:l=>l.connected_call_status==='Lead Qualified',done:l=>l.quote_status==='30% Payment Collected'},
+    {key:'design',label:'Design',check:l=>l.quote_status==='30% Payment Collected',done:l=>l.final_design_stage==='Design Completed'},
+    {key:'project',label:'Project Mgmt',check:l=>l.final_design_stage==='Design Completed',done:l=>l.final_project_stage==='Handover Certificate is Given'},
+  ];
+  const currentStageIdx=stages.reduce((acc,s,i)=>s.check(l)?i:acc,0);
+  const stageBar=`<div style="background:#fff;border-radius:10px;border:1px solid #eee;padding:14px 16px;margin-bottom:14px;">
+    <div style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Lead Stage Progress</div>
+    <div style="display:flex;align-items:center;gap:0;">
+      ${stages.map((s,i)=>{
+        const isActive=i===currentStageIdx;
+        const isDone=s.done(l);
+        const isReached=i<=currentStageIdx;
+        const bg=isDone?'#1D9E75':isActive?'#7F77DD':isReached?'#EEEDFE':'#f5f4f0';
+        const color=isDone?'#fff':isActive?'#fff':isReached?'#3C3489':'#bbb';
+        const textColor=isDone?'#27500A':isActive?'#3C3489':isReached?'#3C3489':'#bbb';
+        return`<div style="flex:1;text-align:center;">
+          <div style="width:32px;height:32px;border-radius:50%;background:${bg};color:${color};display:flex;align-items:center;justify-content:center;margin:0 auto 5px;font-size:12px;font-weight:700;">${isDone?'✓':(i+1)}</div>
+          <div style="font-size:11px;font-weight:600;color:${textColor};">${s.label}</div>
+        </div>${i<stages.length-1?`<div style="flex:0 0 40px;height:2px;background:${isReached&&i<currentStageIdx?'#7F77DD':'#eee'};margin-bottom:18px;"></div>`:''}`;
+      }).join('')}
+    </div>
+  </div>`;
+  document.getElementById('lead-detail-content').innerHTML=stageBar+`
     <div class="detail-header">
       <div style="display:flex;align-items:center;gap:12px;flex:1;">
         <div class="avatar" style="width:44px;height:44px;font-size:15px;">${initials(l.name)}</div>
@@ -737,25 +782,57 @@ function renderPipeline(){
     const cards=state.leads.filter(l=>(l.final_lead_status||'Cold')===s);
     return`<div class="pipe-col">
       <div class="pipe-header" style="color:${colors[s]};">${s}<span class="pipe-count">${cards.length}</span></div>
-      ${cards.map(l=>`<div class="pipe-card ${s.toLowerCase()}" onclick="openLead('${l.id}')">
-        <div class="pipe-card-name">${l.name||'—'}</div>
-        <div class="pipe-card-sub">${l.city||''} ${l.property_type?'· '+l.property_type:''}</div>
-        <div class="pipe-card-meta">
-          ${l.phone?`<span><i class="ti ti-phone" style="font-size:10px;"></i> ${l.phone}</span>`:''}
-          ${l.interior_budget?`<span>💰 ${l.interior_budget}</span>`:''}
-        </div>
-      </div>`).join('')}
+      ${cards.map(l=>{
+        const teamStage=l.final_design_stage==='Design Completed'?'Project Mgmt':l.quote_status==='30% Payment Collected'?'Design':l.connected_call_status==='Lead Qualified'?'Sales':'Calling';
+        return`<div class="pipe-card ${s.toLowerCase()}" onclick="openLead('${l.id}')">
+          <div class="pipe-card-name">${l.name||'—'}</div>
+          <div class="pipe-card-sub">${l.city||''} ${l.property_type?'· '+l.property_type:''}</div>
+          <div class="pipe-card-meta">
+            ${l.phone?`<span><i class="ti ti-phone" style="font-size:10px;"></i> ${l.phone}</span>`:''}
+            <span style="background:#EEEDFE;color:#3C3489;border-radius:99px;padding:1px 6px;font-size:10px;font-weight:600;">${teamStage}</span>
+          </div>
+        </div>`;
+      }).join('')}
     </div>`;
   }).join('');
 }
 
 // ── TEAM VIEWS ────────────────────────────────────────────────────────────
+// Stage gate: which leads are visible to each team
+function getTeamLeads(team){
+  if(team==='calling') return state.leads; // Calling sees all leads
+  if(team==='sales'){
+    // Visible when Connected Call Status = "Lead Qualified"
+    return state.leads.filter(l=>l.connected_call_status==='Lead Qualified');
+  }
+  if(team==='design'){
+    // Visible when Quote Status = "30% Payment Collected"
+    return state.leads.filter(l=>l.quote_status==='30% Payment Collected');
+  }
+  if(team==='project'){
+    // Visible when Final Design Stage = "Design Completed"
+    return state.leads.filter(l=>l.final_design_stage==='Design Completed');
+  }
+  return state.leads;
+}
+
 function renderTeamView(team,title){
   const fields=state.groupFields[team]||[];
-  const leads=state.leads;
+  const leads=getTeamLeads(team);
   const el=document.getElementById(team+'-content');
   if(!fields.length){el.innerHTML=`<div class="empty">No fields assigned to this team. Go to Settings → Team groups.</div>`;return;}
+  const gateInfo={
+    calling:{color:'#E6F1FB',text:'#0C447C',msg:'Shows all leads. Leads move to Sales & Architect when Connected Call Status = <strong>Lead Qualified</strong>'},
+    sales:{color:'#EAF3DE',text:'#27500A',msg:'Shows leads where Connected Call Status = <strong>Lead Qualified</strong>. Leads move to Design Team when Quote Status = <strong>30% Payment Collected</strong>'},
+    design:{color:'#EEEDFE',text:'#3C3489',msg:'Shows leads where Quote Status = <strong>30% Payment Collected</strong>. Leads move to Project Management when Final Design Stage = <strong>Design Completed</strong>'},
+    project:{color:'#FAEEDA',text:'#633806',msg:'Shows leads where Final Design Stage = <strong>Design Completed</strong>'},
+  };
+  const gate=gateInfo[team];
   el.innerHTML=`
+    <div style="background:${gate.color};border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:${gate.text};display:flex;align-items:center;gap:8px;">
+      <i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0;"></i>
+      <span>${gate.msg} &nbsp;·&nbsp; <strong>${leads.length} lead${leads.length!==1?'s':''}</strong> visible to this team</span>
+    </div>
     <div class="table-wrap">
       <table>
         <thead><tr>${fields.map(k=>`<th>${fieldLabel(k)}</th>`).join('')}<th></th></tr></thead>
@@ -1074,6 +1151,20 @@ function processImportRows(rows){
       'Requirement Comment':'requirement_comment',
       'Quote Status':'quote_status',
       'Comments':'comments',
+      'Total Quoted Sq.ft':'total_quoted_sqft',
+      'Requirement Connect':'requirement_connect',
+      'Design Stage':'design_stage',
+      'Final Design Stage':'final_design_stage',
+      'Final Quote Status':'final_quote_status',
+      'Final Project Value (INR)':'final_project_value',
+      'Final Quoted Sq.ft':'final_quoted_sqft',
+      'Production Stage':'production_stage',
+      'Estimated Production Complete Date':'estimated_production_date',
+      'Estimated Delivery Date':'estimated_delivery_date',
+      'Execution Starting Date':'execution_start_date',
+      'Execution End Date':'execution_end_date',
+      'Execution Stage':'execution_stage',
+      'Final Project Stage':'final_project_stage',
     };
     if(EXACT_MAP[header]) return EXACT_MAP[header];
 
