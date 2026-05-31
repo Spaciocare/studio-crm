@@ -264,8 +264,8 @@ tr.clickable:hover td{background:#fafafa;}
           <select class="filter-select" id="filter-city" onchange="renderLeads()"><option value="">All cities</option></select>
           <select class="filter-select" id="filter-source" onchange="renderLeads()"><option value="">All sources</option><option>Meta Ad</option><option>Referral</option></select>
           <button class="btn" onclick="exportCSV()"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
-          <button class="btn" onclick="openModal('import-leads')"><i class="ti ti-upload"></i> Import</button>
-          <button class="btn btn-primary" onclick="openAddLead()"><i class="ti ti-plus"></i> Add lead</button>
+          <button class="btn" id="btn-import" onclick="openModal('import-leads')"><i class="ti ti-upload"></i> Import</button>
+          <button class="btn btn-primary" id="btn-add-lead" onclick="openAddLead()"><i class="ti ti-plus"></i> Add lead</button>
         </div>
       </div>
       <div class="content">
@@ -277,10 +277,10 @@ tr.clickable:hover td{background:#fafafa;}
     <div id="view-lead-detail" class="hidden">
       <div class="topbar">
         <div style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#888;" onclick="switchView('leads')"><i class="ti ti-arrow-left"></i> Back to leads</div>
-        <div class="topbar-right">
-          <button class="btn" onclick="openEditLead()"><i class="ti ti-edit"></i> Edit</button>
-          <button class="btn btn-danger" onclick="deleteLead()"><i class="ti ti-trash"></i> Delete</button>
-          <button class="btn btn-primary" onclick="openModal('add-note')"><i class="ti ti-message"></i> Add note</button>
+        <div class="topbar-right" id="lead-detail-actions">
+          <button class="btn" id="btn-edit-lead" onclick="openEditLead()"><i class="ti ti-edit"></i> Edit</button>
+          <button class="btn btn-danger" id="btn-delete-lead" onclick="deleteLead()"><i class="ti ti-trash"></i> Delete</button>
+          <button class="btn btn-primary" id="btn-add-note" onclick="openModal('add-note')"><i class="ti ti-message"></i> Add note</button>
         </div>
       </div>
       <div class="content" id="lead-detail-content"></div>
@@ -646,36 +646,38 @@ function applyRoleUI(){
   }
 
   if(isAdmin()){
-    // Admin sees everything — show all nav items
+    // Admin sees everything
     document.querySelectorAll('.nav-item').forEach(el=>el.style.display='');
     document.querySelectorAll('.nav-section').forEach(el=>el.style.display='');
+    document.getElementById('user-role-display').textContent='Admin';
     return;
   }
 
-  // Non-admin: hide admin section, leads, pipeline, other team views
-  // Show only their team view and dashboard
-  document.querySelectorAll('[data-view="settings"]').forEach(el=>el.parentElement.style.display='none');
+  // Non-admin: hide Settings nav only
   document.querySelectorAll('.nav-section').forEach(el=>{
-    if(el.querySelector('.nav-section-label')?.textContent.trim()==='Admin') el.style.display='none';
+    const label = el.querySelector('.nav-section-label');
+    if(label && label.textContent.trim()==='Admin') el.style.display='none';
   });
 
-  // Hide other team views
+  // Hide other team views, show their own
   const allTeams = ['calling','sales','design','project'];
   allTeams.forEach(t=>{
     const navItem = document.querySelector(`[data-view="${t}"]`);
     if(navItem) navItem.style.display = t===team ? '' : 'none';
   });
 
-  // View-only: disable edit buttons
-  if(isViewOnly()){
-    document.querySelectorAll('.btn-primary, .btn-danger').forEach(btn=>{
-      if(btn.textContent.includes('Add')||btn.textContent.includes('Edit')||btn.textContent.includes('Delete')||btn.textContent.includes('Import'))
-        btn.style.display='none';
-    });
-  }
+  // Show leads, pipeline, dashboard nav items always
+  ['dashboard','leads','pipeline'].forEach(v=>{
+    const navItem = document.querySelector(`[data-view="${v}"]`);
+    if(navItem) navItem.style.display = '';
+  });
 
-  // Redirect to their team view
-  switchView(team);
+  // Update role label
+  const teamLabels = {calling:'Calling Team',sales:'Sales & Architect',design:'Design Team',project:'Project Mgmt'};
+  document.getElementById('user-role-display').textContent = teamLabels[team] || 'Team Member';
+
+  // Redirect to dashboard by default
+  switchView('dashboard');
 }
 
 function toggleAuthMode(){
@@ -733,10 +735,10 @@ function renderCurrent(){
 }
 
 function switchView(v){
-  // Access control: non-admins can only access dashboard and their own team view
+  // Access control: non-admins cannot access settings
   if(!isAdmin() && state.currentRole !== 'denied'){
-    const allowed = ['dashboard', state.currentTeam, 'lead-detail'];
-    if(!allowed.includes(v)){ toast('Access restricted to your team view.'); return; }
+    const restricted = ['settings'];
+    if(restricted.includes(v)){ toast('Only admins can access Settings.'); return; }
   }
   state.view=v;
   document.querySelectorAll('[id^="view-"]').forEach(el=>el.classList.add('hidden'));
@@ -875,6 +877,13 @@ function getFilteredLeads(){
 }
 
 function renderLeads(){
+  // Show/hide action buttons based on role
+  setTimeout(()=>{
+    const btnImport = document.getElementById('btn-import');
+    const btnAdd = document.getElementById('btn-add-lead');
+    if(btnImport) btnImport.style.display = isAdmin() ? '' : 'none';
+    if(btnAdd) btnAdd.style.display = isViewOnly() ? 'none' : '';
+  },0);
   const leads=getFilteredLeads();
   const cols=['name','phone','city','lead_source','call_status','final_lead_status','quote_status','created_at'];
   document.getElementById('leads-thead').innerHTML=cols.map(k=>`<th>${fieldLabel(k)}</th>`).join('')+'<th></th>';
@@ -929,6 +938,22 @@ function renderLeadDetail(){
       }).join('')}
     </div>
   </div>`;
+  // Update action buttons based on role
+  const btnEdit = document.getElementById('btn-edit-lead');
+  const btnDelete = document.getElementById('btn-delete-lead');
+  const btnNote = document.getElementById('btn-add-note');
+  if(btnEdit) btnEdit.style.display = isViewOnly() ? 'none' : '';
+  if(btnDelete) btnDelete.style.display = isAdmin() ? '' : 'none';
+  if(btnNote) btnNote.style.display = isViewOnly() ? 'none' : '';
+
+  // Update action buttons based on role
+  const btnEdit = document.getElementById('btn-edit-lead');
+  const btnDelete = document.getElementById('btn-delete-lead');
+  const btnNote = document.getElementById('btn-add-note');
+  if(btnEdit) btnEdit.style.display = isViewOnly()?'none':'';
+  if(btnDelete) btnDelete.style.display = isAdmin()?'':'none';
+  if(btnNote) btnNote.style.display = isViewOnly()?'none':'';
+
   document.getElementById('lead-detail-content').innerHTML=stageBar+`
     <div class="detail-header">
       <div style="display:flex;align-items:center;gap:12px;flex:1;">
@@ -1025,17 +1050,21 @@ function renderTeamView(team,title){
             if(ALL_FIELDS.find(f=>f.key===k)?.type==='multiselect')return`<td>${(l[k]||[]).join(', ')||'—'}</td>`;
             return`<td>${l[k]||'—'}</td>`;
           }).join('')}
-          <td><button class="btn btn-sm" onclick="event.stopPropagation();openTeamEdit('${l.id}','${team}')"><i class="ti ti-edit"></i></button></td>
+          <td>${isViewOnly()?"":`<button class="btn btn-sm" onclick="event.stopPropagation();openTeamEdit('${l.id}','${team}')" style="${isViewOnly()?'display:none':''}"><i class="ti ti-edit"></i></button>`}</td>
         </tr>`).join(''):`<tr><td colspan="${fields.length+1}" class="empty">No leads yet.</td></tr>`}</tbody>
       </table>
     </div>`;
 }
 
 function openTeamEdit(id,team){
+  if(isViewOnly()){ toast('View only access — cannot edit leads.'); return; }
   state.selectedLead=id;
   const l=state.leads.find(x=>x.id===id);if(!l)return;
-  const fields=state.groupFields[team]||[];
-  document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'} (${team} team fields only)`;
+  // Use the logged-in user's team fields if not admin
+  const effectiveTeam = isAdmin() ? team : state.currentTeam;
+  const fields = state.groupFields[effectiveTeam]||[];
+  const teamLabels={calling:'Calling Team',sales:'Sales & Architect',design:'Design Team',project:'Project Mgmt'};
+  document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'} · ${teamLabels[effectiveTeam]||effectiveTeam} fields`;
   openModal('edit-lead');
   setTimeout(()=>buildLeadForm('lead-edit-body',l,fields),10);
 }
@@ -1097,10 +1126,14 @@ function getLeadFormData(limitFields=null){
 
 function openAddLead(){openModal('add-lead');}
 function openEditLead(){
+  if(isViewOnly()){ toast('View only access — cannot edit leads.'); return; }
   const l=state.leads.find(x=>x.id===state.selectedLead);if(!l)return;
-  document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'}`;
+  // Non-admins can only edit their team's fields
+  const limitFields = isAdmin() ? null : (state.groupFields[state.currentTeam]||null);
+  const teamLabel = isAdmin() ? '' : ` (${document.getElementById('user-role-display').textContent} fields only)`;
+  document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'}${teamLabel}`;
   openModal('edit-lead');
-  setTimeout(()=>buildLeadForm('lead-edit-body',l),10);
+  setTimeout(()=>buildLeadForm('lead-edit-body',l,limitFields),10);
 }
 
 async function saveLead(){
@@ -1114,8 +1147,8 @@ async function saveLead(){
 
 async function updateLead(){
   if(isViewOnly()){ toast('View only access — cannot edit leads.'); return; }
-  const data=getLeadFormData();
-  if(data.name===''&&!data.name){toast('Name is required');return;}
+  const limitFields = isAdmin() ? null : (state.groupFields[state.currentTeam]||null);
+  const data=getLeadFormData(limitFields);
   const{error}=await sb.from('leads').update(data).eq('id',state.selectedLead);
   if(error){toast('Error: '+error.message);return;}
   closeAllModals();toast('Lead updated!');await loadAll();
