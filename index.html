@@ -5,133 +5,129 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Studio CRM · Spacioworks</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F4F0;color:#1a1a1a;}
-  .hidden{display:none!important;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F4F0;color:#1a1a1a;}
+.hidden{display:none!important;}
+.auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;}
+.auth-card{background:#fff;border:1px solid #e5e5e5;border-radius:16px;padding:36px;width:100%;max-width:380px;box-shadow:0 2px 16px rgba(0,0,0,0.06);}
+.auth-logo{font-size:20px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
+.auth-sub{font-size:13px;color:#888;margin-bottom:28px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:500;}
+.field input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;color:#1a1a1a;outline:none;transition:border 0.15s;}
+.field input:focus{border-color:#7F77DD;}
+.btn-full{width:100%;padding:11px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:14px;font-weight:500;cursor:pointer;}
+.btn-full:hover{opacity:0.85;}
+.btn-full:disabled{opacity:0.5;cursor:not-allowed;}
+.auth-toggle{text-align:center;margin-top:18px;font-size:13px;color:#888;}
+.auth-toggle span{color:#7F77DD;cursor:pointer;font-weight:500;}
+.auth-err{font-size:13px;color:#A32D2D;margin-bottom:14px;padding:10px 12px;background:#FCEBEB;border-radius:8px;}
+.auth-info{font-size:13px;color:#0C447C;margin-bottom:14px;padding:10px 12px;background:#E6F1FB;border-radius:8px;}
+.app{display:flex;height:100vh;}
+.sidebar{width:210px;min-width:210px;border-right:1px solid #e8e8e8;background:#fff;display:flex;flex-direction:column;}
+.logo{padding:20px 18px 16px;border-bottom:1px solid #f0f0f0;}
+.logo-text{font-size:16px;font-weight:600;color:#1a1a1a;}
+.logo-sub{font-size:11px;color:#aaa;margin-top:2px;}
+.nav{padding:10px;flex:1;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;cursor:pointer;font-size:13px;color:#666;margin-bottom:2px;transition:all 0.12s;}
+.nav-item:hover{background:#f5f4f0;color:#1a1a1a;}
+.nav-item.active{background:#EEEDFE;color:#3C3489;font-weight:500;}
+.nav-item i{font-size:16px;}
+.sidebar-footer{padding:14px;border-top:1px solid #f0f0f0;}
+.user-info{font-size:11px;color:#aaa;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.btn-signout{width:100%;padding:7px;border-radius:8px;border:1px solid #e5e5e5;background:transparent;font-size:12px;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-signout:hover{background:#f5f4f0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #eee;background:#fff;}
+.topbar-title{font-size:16px;font-weight:600;color:#1a1a1a;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#1a1a1a;transition:all 0.12s;font-family:inherit;}
+.btn:hover{background:#f5f4f0;}
+.btn-primary{background:#1a1a1a;color:#fff;border-color:transparent;}
+.btn-primary:hover{opacity:0.85;background:#1a1a1a;}
+.btn-danger{background:#fff;color:#A32D2D;border-color:#F09595;}
+.btn-danger:hover{background:#FCEBEB;}
+.content{flex:1;overflow-y:auto;padding:20px;background:#F5F4F0;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eee;}
+.stat-label{font-size:11px;color:#aaa;margin-bottom:5px;font-weight:500;}
+.stat-val{font-size:24px;font-weight:600;color:#1a1a1a;}
+.table-wrap{background:#fff;border-radius:10px;border:1px solid #eee;overflow:hidden;}
+.section-label{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:11px;font-weight:600;color:#aaa;padding:10px 14px;border-bottom:1px solid #f0f0f0;background:#fafafa;text-transform:uppercase;letter-spacing:.04em;}
+td{padding:11px 14px;border-bottom:1px solid #f5f5f5;color:#1a1a1a;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr.clickable{cursor:pointer;}
+tr.clickable:hover td{background:#fafafa;}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;}
+.badge-lead{background:#E6F1FB;color:#0C447C;}
+.badge-active{background:#EAF3DE;color:#27500A;}
+.badge-design{background:#EEEDFE;color:#3C3489;}
+.badge-done{background:#F1EFE8;color:#444441;}
+.badge-proposal{background:#FAEEDA;color:#633806;}
+.badge-sent{background:#FAEEDA;color:#633806;}
+.badge-accepted{background:#EAF3DE;color:#27500A;}
+.badge-draft{background:#F1EFE8;color:#444441;}
+.badge-high{background:#FAECE7;color:#712B13;}
+.badge-med{background:#FAEEDA;color:#633806;}
+.badge-low{background:#EAF3DE;color:#27500A;}
+.avatar{width:30px;height:30px;border-radius:50%;background:#EEEDFE;color:#3C3489;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;margin-right:10px;flex-shrink:0;}
+.client-cell{display:flex;align-items:center;}
+.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.pipe-col{background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:300px;}
+.pipe-header{font-size:12px;font-weight:600;color:#888;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
+.pipe-count{background:#f5f4f0;border-radius:99px;padding:2px 8px;font-size:11px;color:#888;}
+.pipe-card{background:#fafafa;border:1px solid #eee;border-radius:8px;padding:11px;}
+.pipe-card-name{font-size:13px;font-weight:500;color:#1a1a1a;margin-bottom:2px;}
+.pipe-card-sub{font-size:11px;color:#aaa;}
+.pipe-card-val{font-size:12px;color:#666;margin-top:6px;font-weight:500;}
+.note-item{padding:12px;border-radius:8px;border:1px solid #eee;margin-bottom:8px;background:#fff;}
+.note-meta{font-size:11px;color:#aaa;margin-bottom:4px;}
+.note-text{font-size:13px;color:#1a1a1a;line-height:1.5;}
+.empty{text-align:center;color:#bbb;font-size:13px;padding:48px 0;}
+.fu-item{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:8px;border:1px solid #eee;margin-bottom:8px;background:#fff;}
+.fu-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.dot-high{background:#D85A30;}.dot-med{background:#BA7517;}.dot-low{background:#639922;}
+.detail-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;background:#fff;padding:16px;border-radius:10px;border:1px solid #eee;}
+.detail-name{font-size:17px;font-weight:600;}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.info-block{background:#fff;border-radius:8px;padding:12px;border:1px solid #eee;}
+.info-label{font-size:11px;color:#aaa;margin-bottom:3px;font-weight:500;}
+.info-val{font-size:13px;color:#1a1a1a;font-weight:500;}
+.tabs{display:flex;border-bottom:1px solid #eee;margin-bottom:16px;}
+.tab{padding:9px 16px;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:100;}
+.modal{background:#fff;border-radius:16px;border:1px solid #eee;padding:24px;width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.12);}
+.modal-title{font-size:16px;font-weight:600;color:#1a1a1a;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;}
+.mfield{margin-bottom:14px;}
+.mfield label{display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;}
+.mfield input,.mfield select,.mfield textarea{width:100%;padding:9px 11px;border-radius:8px;border:1px solid #ddd;font-size:13px;color:#1a1a1a;font-family:inherit;outline:none;transition:border 0.12s;}
+.mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:#7F77DD;}
+.mfield textarea{resize:vertical;min-height:70px;}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:1px solid #f0f0f0;}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:200;transition:opacity 0.3s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
 
-  /* AUTH */
-  .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;}
-  .auth-card{background:#fff;border:1px solid #e5e5e5;border-radius:16px;padding:36px;width:100%;max-width:380px;box-shadow:0 2px 16px rgba(0,0,0,0.06);}
-  .auth-logo{font-size:20px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
-  .auth-sub{font-size:13px;color:#888;margin-bottom:28px;}
-  .field{margin-bottom:16px;}
-  .field label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:500;}
-  .field input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;color:#1a1a1a;outline:none;transition:border 0.15s;}
-  .field input:focus{border-color:#7F77DD;}
-  .btn-full{width:100%;padding:11px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:opacity 0.15s;}
-  .btn-full:hover{opacity:0.85;}
-  .btn-full:disabled{opacity:0.5;cursor:not-allowed;}
-  .auth-toggle{text-align:center;margin-top:18px;font-size:13px;color:#888;}
-  .auth-toggle span{color:#7F77DD;cursor:pointer;font-weight:500;}
-  .auth-err{font-size:13px;color:#A32D2D;margin-bottom:14px;padding:10px 12px;background:#FCEBEB;border-radius:8px;border:1px solid #F09595;}
-  .auth-info{font-size:13px;color:#0C447C;margin-bottom:14px;padding:10px 12px;background:#E6F1FB;border-radius:8px;border:1px solid #85B7EB;}
-
-  /* LAYOUT */
-  .app{display:flex;height:100vh;}
-  .sidebar{width:210px;min-width:210px;border-right:1px solid #e8e8e8;background:#fff;display:flex;flex-direction:column;}
-  .logo{padding:20px 18px 16px;border-bottom:1px solid #f0f0f0;}
-  .logo-text{font-size:16px;font-weight:600;color:#1a1a1a;}
-  .logo-sub{font-size:11px;color:#aaa;margin-top:2px;}
-  .nav{padding:10px;flex:1;}
-  .nav-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;cursor:pointer;font-size:13px;color:#666;margin-bottom:2px;transition:all 0.12s;}
-  .nav-item:hover{background:#f5f4f0;color:#1a1a1a;}
-  .nav-item.active{background:#EEEDFE;color:#3C3489;font-weight:500;}
-  .nav-item i{font-size:16px;}
-  .sidebar-footer{padding:14px;border-top:1px solid #f0f0f0;}
-  .user-info{font-size:11px;color:#aaa;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .btn-signout{width:100%;padding:7px;border-radius:8px;border:1px solid #e5e5e5;background:transparent;font-size:12px;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
-  .btn-signout:hover{background:#f5f4f0;}
-  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #eee;background:#fff;}
-  .topbar-title{font-size:16px;font-weight:600;color:#1a1a1a;}
-  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#1a1a1a;transition:all 0.12s;}
-  .btn:hover{background:#f5f4f0;}
-  .btn-primary{background:#1a1a1a;color:#fff;border-color:transparent;}
-  .btn-primary:hover{opacity:0.85;background:#1a1a1a;}
-  .content{flex:1;overflow-y:auto;padding:20px;background:#F5F4F0;}
-
-  /* STATS */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-  .stat{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eee;}
-  .stat-label{font-size:11px;color:#aaa;margin-bottom:5px;font-weight:500;}
-  .stat-val{font-size:24px;font-weight:600;color:#1a1a1a;}
-
-  /* TABLE */
-  .table-wrap{background:#fff;border-radius:10px;border:1px solid #eee;overflow:hidden;}
-  .section-label{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th{text-align:left;font-size:11px;font-weight:600;color:#aaa;padding:10px 14px;border-bottom:1px solid #f0f0f0;background:#fafafa;text-transform:uppercase;letter-spacing:.04em;}
-  td{padding:11px 14px;border-bottom:1px solid #f5f5f5;color:#1a1a1a;vertical-align:middle;}
-  tr:last-child td{border-bottom:none;}
-  tr.clickable{cursor:pointer;}
-  tr.clickable:hover td{background:#fafafa;}
-
-  /* BADGES */
-  .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;}
-  .badge-lead{background:#E6F1FB;color:#0C447C;}
-  .badge-active{background:#EAF3DE;color:#27500A;}
-  .badge-design{background:#EEEDFE;color:#3C3489;}
-  .badge-done{background:#F1EFE8;color:#444441;}
-  .badge-proposal{background:#FAEEDA;color:#633806;}
-  .badge-sent{background:#FAEEDA;color:#633806;}
-  .badge-accepted{background:#EAF3DE;color:#27500A;}
-  .badge-draft{background:#F1EFE8;color:#444441;}
-  .badge-high{background:#FAECE7;color:#712B13;}
-  .badge-med{background:#FAEEDA;color:#633806;}
-  .badge-low{background:#EAF3DE;color:#27500A;}
-
-  /* AVATAR */
-  .avatar{width:30px;height:30px;border-radius:50%;background:#EEEDFE;color:#3C3489;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;margin-right:10px;flex-shrink:0;}
-  .client-cell{display:flex;align-items:center;}
-
-  /* PIPELINE */
-  .pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-  .pipe-col{background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:300px;}
-  .pipe-header{font-size:12px;font-weight:600;color:#888;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
-  .pipe-count{background:#f5f4f0;border-radius:99px;padding:2px 8px;font-size:11px;color:#888;}
-  .pipe-card{background:#fafafa;border:1px solid #eee;border-radius:8px;padding:11px;cursor:pointer;transition:border 0.12s;}
-  .pipe-card:hover{border-color:#ccc;}
-  .pipe-card-name{font-size:13px;font-weight:500;color:#1a1a1a;margin-bottom:2px;}
-  .pipe-card-sub{font-size:11px;color:#aaa;}
-  .pipe-card-val{font-size:12px;color:#666;margin-top:6px;font-weight:500;}
-
-  /* NOTES & FOLLOWUPS */
-  .note-item{padding:12px;border-radius:8px;border:1px solid #eee;margin-bottom:8px;background:#fff;}
-  .note-meta{font-size:11px;color:#aaa;margin-bottom:4px;}
-  .note-text{font-size:13px;color:#1a1a1a;line-height:1.5;}
-  .empty{text-align:center;color:#bbb;font-size:13px;padding:48px 0;}
-  .fu-item{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:8px;border:1px solid #eee;margin-bottom:8px;background:#fff;}
-  .fu-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
-  .dot-high{background:#D85A30;}.dot-med{background:#BA7517;}.dot-low{background:#639922;}
-
-  /* DETAIL */
-  .detail-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;background:#fff;padding:16px;border-radius:10px;border:1px solid #eee;}
-  .detail-name{font-size:17px;font-weight:600;}
-  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-  .info-block{background:#fff;border-radius:8px;padding:12px;border:1px solid #eee;}
-  .info-label{font-size:11px;color:#aaa;margin-bottom:3px;font-weight:500;}
-  .info-val{font-size:13px;color:#1a1a1a;font-weight:500;}
-  .tabs{display:flex;border-bottom:1px solid #eee;margin-bottom:16px;}
-  .tab{padding:9px 16px;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.12s;}
-  .tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500;}
-
-  /* MODAL */
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:100;}
-  .modal{background:#fff;border-radius:16px;border:1px solid #eee;padding:24px;width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.12);}
-  .modal-title{font-size:16px;font-weight:600;color:#1a1a1a;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;}
-  .mfield{margin-bottom:14px;}
-  .mfield label{display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;}
-  .mfield input,.mfield select,.mfield textarea{width:100%;padding:9px 11px;border-radius:8px;border:1px solid #ddd;font-size:13px;color:#1a1a1a;font-family:inherit;outline:none;transition:border 0.12s;}
-  .mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:#7F77DD;}
-  .mfield textarea{resize:vertical;min-height:70px;}
-  .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
-
-  /* TOAST */
-  .toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:200;transition:opacity 0.3s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
-
-  /* TABLER ICONS */
-  @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css');
+/* SETTINGS */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.settings-card{background:#fff;border-radius:12px;border:1px solid #eee;padding:20px;}
+.settings-card-title{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
+.settings-card-sub{font-size:12px;color:#aaa;margin-bottom:16px;}
+.field-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;}
+.field-toggle:last-child{border-bottom:none;}
+.field-toggle-info{flex:1;}
+.field-toggle-name{font-size:13px;font-weight:500;color:#1a1a1a;}
+.field-toggle-desc{font-size:11px;color:#aaa;margin-top:1px;}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#ddd;border-radius:20px;cursor:pointer;transition:0.2s;}
+.toggle-slider:before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.2s;}
+.toggle input:checked+.toggle-slider{background:#7F77DD;}
+.toggle input:checked+.toggle-slider:before{transform:translateX(16px);}
+.settings-save-bar{background:#fff;border:1px solid #eee;border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.settings-save-info{font-size:13px;color:#666;}
 </style>
 </head>
 <body>
@@ -157,6 +153,7 @@
       <div class="nav-item" data-view="pipeline" onclick="switchView('pipeline')"><i class="ti ti-layout-kanban"></i> Pipeline</div>
       <div class="nav-item" data-view="quotes" onclick="switchView('quotes')"><i class="ti ti-receipt"></i> Quotes</div>
       <div class="nav-item" data-view="followups" onclick="switchView('followups')"><i class="ti ti-bell"></i> Follow-ups</div>
+      <div class="nav-item" data-view="settings" onclick="switchView('settings')"><i class="ti ti-settings"></i> Settings</div>
     </div>
     <div class="sidebar-footer">
       <div class="user-info" id="user-email-display"></div>
@@ -165,6 +162,8 @@
   </div>
 
   <div class="main">
+
+    <!-- CLIENTS -->
     <div id="view-clients">
       <div class="topbar">
         <span class="topbar-title">Clients</span>
@@ -176,49 +175,64 @@
       <div class="content">
         <div class="stats" id="client-stats"></div>
         <div class="section-label">All clients</div>
-        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>Status</th><th>Budget</th></tr></thead><tbody id="clients-table"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr id="clients-thead"></tr></thead><tbody id="clients-table"></tbody></table></div>
       </div>
     </div>
 
+    <!-- CLIENT DETAIL -->
     <div id="view-client-detail" class="hidden">
       <div class="topbar">
         <div style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#888;font-size:13px;" onclick="switchView('clients')"><i class="ti ti-arrow-left"></i> Back to clients</div>
-        <button class="btn btn-primary" onclick="openModal('add-note')"><i class="ti ti-plus"></i> Add note</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" onclick="openEditClient()"><i class="ti ti-edit"></i> Edit</button>
+          <button class="btn btn-danger" onclick="deleteClient()"><i class="ti ti-trash"></i> Delete</button>
+          <button class="btn btn-primary" onclick="openModal('add-note')"><i class="ti ti-plus"></i> Add note</button>
+        </div>
       </div>
       <div class="content" id="client-detail-content"></div>
     </div>
 
+    <!-- PIPELINE -->
     <div id="view-pipeline" class="hidden">
       <div class="topbar"><span class="topbar-title">Project pipeline</span><button class="btn btn-primary" onclick="openModal('add-project')"><i class="ti ti-plus"></i> Add project</button></div>
       <div class="content"><div class="pipeline" id="pipeline-board"></div></div>
     </div>
 
+    <!-- QUOTES -->
     <div id="view-quotes" class="hidden">
       <div class="topbar"><span class="topbar-title">Quotes & invoices</span><button class="btn btn-primary" onclick="openModal('add-quote')"><i class="ti ti-plus"></i> New quote</button></div>
       <div class="content"><div class="table-wrap"><table><thead><tr><th>Quote #</th><th>Client</th><th>Description</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody id="quotes-table"></tbody></table></div></div>
     </div>
 
+    <!-- FOLLOWUPS -->
     <div id="view-followups" class="hidden">
       <div class="topbar"><span class="topbar-title">Follow-ups & reminders</span><button class="btn btn-primary" onclick="openModal('add-followup')"><i class="ti ti-plus"></i> Add reminder</button></div>
       <div class="content" id="followups-content"></div>
     </div>
+
+    <!-- SETTINGS -->
+    <div id="view-settings" class="hidden">
+      <div class="topbar"><span class="topbar-title">Settings</span></div>
+      <div class="content" id="settings-content"></div>
+    </div>
+
   </div>
 </div>
 
 <!-- MODALS -->
 <div class="modal-bg hidden" id="modal-overlay" onclick="closeMO(event)">
   <div class="modal hidden" id="modal-add-client">
-    <div class="modal-title">New client <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
-    <div class="mfield"><label>Full name *</label><input id="c-name" placeholder="e.g. Sarah Mitchell"></div>
-    <div class="mfield"><label>Email</label><input id="c-email" type="email" placeholder="client@email.com"></div>
-    <div class="mfield"><label>Phone</label><input id="c-phone" placeholder="+91 98765 43210"></div>
-    <div class="mfield"><label>Type</label><select id="c-type"><option>Residential</option><option>Commercial</option></select></div>
-    <div class="mfield"><label>Budget</label><input id="c-budget" placeholder="e.g. ₹15,00,000"></div>
-    <div class="mfield"><label>Status</label><select id="c-status"><option>Lead</option><option>Active</option><option>In design</option><option>Done</option></select></div>
-    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addClient()">Add client</button></div>
+    <div class="modal-title">New client <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
+    <div id="client-form-fields"></div>
+    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="saveClient()">Add client</button></div>
+  </div>
+  <div class="modal hidden" id="modal-edit-client">
+    <div class="modal-title">Edit client <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
+    <div id="client-edit-fields"></div>
+    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="updateClient()">Save changes</button></div>
   </div>
   <div class="modal hidden" id="modal-add-project">
-    <div class="modal-title">New project <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="modal-title">New project <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
     <div class="mfield"><label>Project name *</label><input id="p-name" placeholder="e.g. Master Bedroom Redesign"></div>
     <div class="mfield"><label>Client</label><select id="p-client"></select></div>
     <div class="mfield"><label>Stage</label><select id="p-stage"><option>Lead</option><option>Proposal</option><option>In design</option><option>Done</option></select></div>
@@ -226,15 +240,15 @@
     <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addProject()">Add project</button></div>
   </div>
   <div class="modal hidden" id="modal-add-quote">
-    <div class="modal-title">New quote <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="modal-title">New quote <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
     <div class="mfield"><label>Client</label><select id="q-client"></select></div>
     <div class="mfield"><label>Description</label><input id="q-desc" placeholder="e.g. Living room package"></div>
-    <div class="mfield"><label>Amount (₹)</label><input id="q-amount" type="number" placeholder="500000"></div>
+    <div class="mfield"><label>Amount (₹)</label><input id="q-amount" type="number"></div>
     <div class="mfield"><label>Status</label><select id="q-status"><option>Draft</option><option>Sent</option><option>Accepted</option></select></div>
     <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addQuote()">Save quote</button></div>
   </div>
   <div class="modal hidden" id="modal-add-followup">
-    <div class="modal-title">New reminder <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="modal-title">New reminder <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
     <div class="mfield"><label>Client</label><select id="f-client"></select></div>
     <div class="mfield"><label>Note</label><textarea id="f-note" placeholder="e.g. Follow up on material samples..."></textarea></div>
     <div class="mfield"><label>Due date</label><input id="f-date" type="date"></div>
@@ -242,122 +256,190 @@
     <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addFollowup()">Save</button></div>
   </div>
   <div class="modal hidden" id="modal-add-note">
-    <div class="modal-title">Add note <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
-    <div class="mfield"><label>Note</label><textarea id="n-text" placeholder="Meeting notes, client preferences, decisions made..."></textarea></div>
+    <div class="modal-title">Add note <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
+    <div class="mfield"><label>Note</label><textarea id="n-text" placeholder="Meeting notes, preferences, decisions..."></textarea></div>
     <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addNote()">Save note</button></div>
   </div>
 </div>
 
 <script>
-const SUPA_URL = 'https://vfucyxwmmetymmznbqsh.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmdWN5eHdtbWV0eW1tem5icXNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjI0NzksImV4cCI6MjA5NTczODQ3OX0.dcrCbW_3h1sSEw25KqL3W7OU6Nq3KVm7Rclp9CctAMs';
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+const SUPA_URL='https://vfucyxwmmetymmznbqsh.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmdWN5eHdtbWV0eW1tem5icXNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjI0NzksImV4cCI6MjA5NTczODQ3OX0.dcrCbW_3h1sSEw25KqL3W7OU6Nq3KVm7Rclp9CctAMs';
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 
-let state = { view:'clients', selectedClient:null, selectedClientTab:'notes', clients:[], projects:[], quotes:[], followups:[], notes:[] };
-let authMode = 'signin';
+// ALL POSSIBLE CLIENT FIELDS
+const ALL_FIELDS=[
+  {key:'name',label:'Full name',type:'text',placeholder:'e.g. Sarah Mitchell',required:true,default:true,locked:true},
+  {key:'email',label:'Email',type:'email',placeholder:'client@email.com',default:true},
+  {key:'phone',label:'Phone',type:'text',placeholder:'+91 98765 43210',default:true},
+  {key:'whatsapp',label:'WhatsApp number',type:'text',placeholder:'+91 98765 43210',default:false},
+  {key:'type',label:'Client type',type:'select',options:['Residential','Commercial','Hospitality','Retail'],default:true},
+  {key:'status',label:'Status',type:'select',options:['Lead','Active','In design','Done'],default:true,locked:true},
+  {key:'budget',label:'Budget',type:'text',placeholder:'e.g. ₹15,00,000',default:true},
+  {key:'city',label:'City / Location',type:'text',placeholder:'e.g. Mumbai',default:false},
+  {key:'property_size',label:'Property size (sq ft)',type:'text',placeholder:'e.g. 1200',default:false},
+  {key:'project_type',label:'Project type',type:'select',options:['Full interior','Modular kitchen','False ceiling','Wardrobe','Living room','Bedroom','Bathroom','Office'],default:false},
+  {key:'source',label:'How did they find you',type:'select',options:['Referral','Instagram','Website','Google','Walk-in','WhatsApp','Other'],default:false},
+  {key:'timeline',label:'Expected start date',type:'date',default:false},
+  {key:'alternate_phone',label:'Alternate phone',type:'text',placeholder:'+91 98765 43210',default:false},
+  {key:'address',label:'Full address',type:'textarea',placeholder:'Street, Area, City',default:false},
+  {key:'notes',label:'Initial notes',type:'textarea',placeholder:'Any details from first conversation...',default:false},
+];
+
+let state={view:'clients',selectedClient:null,selectedClientTab:'notes',clients:[],projects:[],quotes:[],followups:[],dbNotes:[],fieldSettings:{}};
+let authMode='signin';
+
+function loadFieldSettings(){
+  try{
+    const saved=localStorage.getItem('crm_field_settings');
+    if(saved){ state.fieldSettings=JSON.parse(saved); }
+    else{
+      ALL_FIELDS.forEach(f=>{ state.fieldSettings[f.key]=f.default; });
+      saveFieldSettings();
+    }
+  }catch(e){
+    ALL_FIELDS.forEach(f=>{ state.fieldSettings[f.key]=f.default; });
+  }
+}
+function saveFieldSettings(){ localStorage.setItem('crm_field_settings',JSON.stringify(state.fieldSettings)); }
+function isFieldEnabled(key){ return state.fieldSettings[key]===true||state.fieldSettings[key]===undefined; }
 
 async function init(){
-  const { data:{ session } } = await sb.auth.getSession();
-  if(session){ showApp(session.user); } else { showAuth(); }
-  sb.auth.onAuthStateChange((_e, session) => { if(session){ showApp(session.user); } else { showAuth(); } });
+  loadFieldSettings();
+  const{data:{session}}=await sb.auth.getSession();
+  if(session){showApp(session.user);}else{showAuth();}
+  sb.auth.onAuthStateChange((_e,session)=>{if(session){showApp(session.user);}else{showAuth();}});
 }
 
-function showAuth(){ document.getElementById('auth-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); }
-function showApp(user){ document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); document.getElementById('user-email-display').textContent = user.email; loadAll(); }
+function showAuth(){document.getElementById('auth-screen').classList.remove('hidden');document.getElementById('app-screen').classList.add('hidden');}
+function showApp(user){document.getElementById('auth-screen').classList.add('hidden');document.getElementById('app-screen').classList.remove('hidden');document.getElementById('user-email-display').textContent=user.email;loadAll();}
 
 function toggleAuthMode(){
-  authMode = authMode==='signin'?'signup':'signin';
-  document.getElementById('auth-btn').textContent = authMode==='signin'?'Sign in':'Create account';
-  document.getElementById('auth-sub').textContent = authMode==='signin'?'Spacioworks · Sign in to continue':'Spacioworks · Create your account';
-  document.getElementById('auth-toggle').innerHTML = authMode==='signin'?'No account? <span onclick="toggleAuthMode()">Create one</span>':'Have an account? <span onclick="toggleAuthMode()">Sign in</span>';
+  authMode=authMode==='signin'?'signup':'signin';
+  document.getElementById('auth-btn').textContent=authMode==='signin'?'Sign in':'Create account';
+  document.getElementById('auth-sub').textContent=authMode==='signin'?'Spacioworks · Sign in to continue':'Spacioworks · Create your account';
+  document.getElementById('auth-toggle').innerHTML=authMode==='signin'?'No account? <span onclick="toggleAuthMode()">Create one</span>':'Have an account? <span onclick="toggleAuthMode()">Sign in</span>';
   document.getElementById('auth-err').classList.add('hidden');
   document.getElementById('auth-info').classList.add('hidden');
 }
 
 async function handleAuth(){
-  const email = document.getElementById('auth-email').value.trim();
-  const pass = document.getElementById('auth-pass').value;
+  const email=document.getElementById('auth-email').value.trim();
+  const pass=document.getElementById('auth-pass').value;
   document.getElementById('auth-err').classList.add('hidden');
   document.getElementById('auth-info').classList.add('hidden');
-  if(!email||!pass){ showErr('Please enter your email and password.'); return; }
-  if(pass.length<6){ showErr('Password must be at least 6 characters.'); return; }
-  const btn = document.getElementById('auth-btn');
-  btn.textContent='Please wait...'; btn.disabled=true;
-  try {
+  if(!email||!pass){showErr('Please enter your email and password.');return;}
+  if(pass.length<6){showErr('Password must be at least 6 characters.');return;}
+  const btn=document.getElementById('auth-btn');
+  btn.textContent='Please wait...';btn.disabled=true;
+  try{
     let res;
-    if(authMode==='signin'){ res = await sb.auth.signInWithPassword({email,password:pass}); }
-    else { res = await sb.auth.signUp({email,password:pass}); }
-    if(res.error){ showErr(res.error.message); }
-    else if(authMode==='signup'&&!res.data?.session){ showInfo('Account created! Check your email to confirm, then sign in.'); }
-  } catch(e){ showErr('Error: '+e.message); }
-  btn.textContent=authMode==='signin'?'Sign in':'Create account'; btn.disabled=false;
+    if(authMode==='signin'){res=await sb.auth.signInWithPassword({email,password:pass});}
+    else{res=await sb.auth.signUp({email,password:pass});}
+    if(res.error){showErr(res.error.message);}
+    else if(authMode==='signup'&&!res.data?.session){showInfo('Account created! Check your email to confirm, then sign in.');}
+  }catch(e){showErr('Error: '+e.message);}
+  btn.textContent=authMode==='signin'?'Sign in':'Create account';btn.disabled=false;
 }
 
-function showErr(msg){ const e=document.getElementById('auth-err'); e.textContent=msg; e.classList.remove('hidden'); }
-function showInfo(msg){ const e=document.getElementById('auth-info'); e.textContent=msg; e.classList.remove('hidden'); }
-async function signOut(){ await sb.auth.signOut(); }
+function showErr(msg){const e=document.getElementById('auth-err');e.textContent=msg;e.classList.remove('hidden');}
+function showInfo(msg){const e=document.getElementById('auth-info');e.textContent=msg;e.classList.remove('hidden');}
+async function signOut(){await sb.auth.signOut();}
 
 async function loadAll(){
-  const [c,p,q,f,n] = await Promise.all([
+  const[c,p,q,f,n]=await Promise.all([
     sb.from('clients').select('*').order('created_at',{ascending:false}),
     sb.from('projects').select('*').order('created_at',{ascending:false}),
     sb.from('quotes').select('*').order('created_at',{ascending:false}),
     sb.from('followups').select('*').order('due_date',{ascending:true}),
     sb.from('client_notes').select('*').order('created_at',{ascending:false}),
   ]);
-  state.clients=c.data||[]; state.projects=p.data||[]; state.quotes=q.data||[]; state.followups=f.data||[]; state.notes=n.data||[];
+  state.clients=c.data||[];state.projects=p.data||[];state.quotes=q.data||[];state.followups=f.data||[];state.dbNotes=n.data||[];
   renderCurrent();
 }
 
 function renderCurrent(){
   const v=state.view;
-  if(v==='clients') renderClients();
-  else if(v==='pipeline') renderPipeline();
-  else if(v==='quotes') renderQuotes();
-  else if(v==='followups') renderFollowups();
-  else if(v==='client-detail') renderClientDetail();
+  if(v==='clients')renderClients();
+  else if(v==='pipeline')renderPipeline();
+  else if(v==='quotes')renderQuotes();
+  else if(v==='followups')renderFollowups();
+  else if(v==='client-detail')renderClientDetail();
+  else if(v==='settings')renderSettings();
 }
 
 function switchView(v){
   state.view=v;
-  ['clients','pipeline','quotes','followups','client-detail'].forEach(id=>{ document.getElementById('view-'+id).classList.add('hidden'); });
+  ['clients','pipeline','quotes','followups','client-detail','settings'].forEach(id=>{document.getElementById('view-'+id).classList.add('hidden');});
   document.getElementById('view-'+v).classList.remove('hidden');
-  document.querySelectorAll('.nav-item').forEach(el=>{ el.classList.toggle('active',el.dataset.view===v); });
+  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.view===v);});
   renderCurrent();
 }
 
-function statusBadge(s){ const map={Lead:'badge-lead',Active:'badge-active','In design':'badge-design',Done:'badge-done',Proposal:'badge-proposal',Sent:'badge-sent',Accepted:'badge-accepted',Draft:'badge-draft'}; return `<span class="badge ${map[s]||'badge-draft'}">${s||'—'}</span>`; }
-function initials(name){ return (name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
-function fmtDate(d){ if(!d) return '—'; try{ return new Date(d).toLocaleDateString('en-IN',{month:'short',day:'numeric'}); }catch(e){ return d; } }
+function statusBadge(s){const map={Lead:'badge-lead',Active:'badge-active','In design':'badge-design',Done:'badge-done',Proposal:'badge-proposal',Sent:'badge-sent',Accepted:'badge-accepted',Draft:'badge-draft'};return`<span class="badge ${map[s]||'badge-draft'}">${s||'—'}</span>`;}
+function initials(name){return(name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-IN',{month:'short',day:'numeric',year:'numeric'});}catch(e){return d;}}
+
+// BUILD CLIENT FORM
+function buildClientForm(containerId,existingData={}){
+  const el=document.getElementById(containerId);
+  el.innerHTML=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)).map(f=>{
+    const val=existingData[f.key]||'';
+    let input='';
+    if(f.type==='select'){
+      input=`<select id="cf-${f.key}"><option value="">Select...</option>${f.options.map(o=>`<option value="${o}"${val===o?' selected':''}>${o}</option>`).join('')}</select>`;
+    }else if(f.type==='textarea'){
+      input=`<textarea id="cf-${f.key}" placeholder="${f.placeholder||''}">${val}</textarea>`;
+    }else{
+      input=`<input id="cf-${f.key}" type="${f.type}" placeholder="${f.placeholder||''}" value="${val}">`;
+    }
+    return`<div class="mfield"><label>${f.label}${f.required?' *':''}</label>${input}</div>`;
+  }).join('');
+}
+
+function getClientFormData(){
+  const data={};
+  ALL_FIELDS.filter(f=>isFieldEnabled(f.key)).forEach(f=>{
+    const el=document.getElementById('cf-'+f.key);
+    if(el)data[f.key]=el.value;
+  });
+  return data;
+}
 
 function renderClients(){
   const counts={};
-  state.clients.forEach(c=>{ counts[c.status]=(counts[c.status]||0)+1; });
+  state.clients.forEach(c=>{counts[c.status]=(counts[c.status]||0)+1;});
   document.getElementById('client-stats').innerHTML=`
     <div class="stat"><div class="stat-label">Total clients</div><div class="stat-val">${state.clients.length}</div></div>
     <div class="stat"><div class="stat-label">Leads</div><div class="stat-val">${counts['Lead']||0}</div></div>
     <div class="stat"><div class="stat-label">Active</div><div class="stat-val">${counts['Active']||0}</div></div>
     <div class="stat"><div class="stat-label">In design</div><div class="stat-val">${counts['In design']||0}</div></div>`;
+  const enabledFields=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)&&['name','phone','type','status','budget','city','source'].includes(f.key));
+  document.getElementById('clients-thead').innerHTML=enabledFields.map(f=>`<th>${f.label}</th>`).join('');
   const tb=document.getElementById('clients-table');
-  if(!state.clients.length){ tb.innerHTML=`<tr><td colspan="5" class="empty">No clients yet — add your first one!</td></tr>`; return; }
+  if(!state.clients.length){tb.innerHTML=`<tr><td colspan="${enabledFields.length}" class="empty">No clients yet — add your first one!</td></tr>`;return;}
   tb.innerHTML=state.clients.map(c=>`<tr class="clickable" onclick="openClient('${c.id}')">
-    <td><div class="client-cell"><div class="avatar">${initials(c.name)}</div>${c.name}</div></td>
-    <td>${c.type||'—'}</td><td>${c.phone||'—'}</td><td>${statusBadge(c.status)}</td><td>${c.budget||'—'}</td>
+    ${enabledFields.map(f=>{
+      if(f.key==='name')return`<td><div class="client-cell"><div class="avatar">${initials(c.name)}</div>${c.name||'—'}</div></td>`;
+      if(f.key==='status')return`<td>${statusBadge(c.status)}</td>`;
+      return`<td>${c[f.key]||'—'}</td>`;
+    }).join('')}
   </tr>`).join('');
 }
 
-function openClient(id){ state.selectedClient=id; state.selectedClientTab='notes'; switchView('client-detail'); }
+function openClient(id){state.selectedClient=id;state.selectedClientTab='notes';switchView('client-detail');}
 
 function renderClientDetail(){
-  const c=state.clients.find(x=>x.id===state.selectedClient); if(!c) return;
+  const c=state.clients.find(x=>x.id===state.selectedClient);if(!c)return;
   const projects=state.projects.filter(p=>p.client_id===c.id);
   const quotes=state.quotes.filter(q=>q.client_id===c.id);
-  const notes=state.notes.filter(n=>n.client_id===c.id);
+  const notes=state.dbNotes.filter(n=>n.client_id===c.id);
   const followups=state.followups.filter(f=>f.client_id===c.id&&!f.done);
+  const infoFields=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)&&f.key!=='name'&&f.key!=='notes'&&f.type!=='textarea');
   let tabContent='';
-  if(state.selectedClientTab==='notes'){ tabContent=notes.length?notes.map(n=>`<div class="note-item"><div class="note-meta">${fmtDate(n.created_at)}</div><div class="note-text">${n.text}</div></div>`).join(''):`<div class="empty">No notes yet.</div>`; }
-  else if(state.selectedClientTab==='projects'){ tabContent=projects.length?`<div class="table-wrap"><table><thead><tr><th>Project</th><th>Stage</th><th>Value</th></tr></thead><tbody>${projects.map(p=>`<tr><td>${p.name}</td><td>${statusBadge(p.stage)}</td><td>${p.value||'—'}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No projects.</div>`; }
-  else if(state.selectedClientTab==='quotes'){ tabContent=quotes.length?`<div class="table-wrap"><table><thead><tr><th>Description</th><th>Amount</th><th>Status</th></tr></thead><tbody>${quotes.map(q=>`<tr><td>${q.description||'—'}</td><td>₹${Number(q.amount||0).toLocaleString('en-IN')}</td><td>${statusBadge(q.status)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No quotes.</div>`; }
+  if(state.selectedClientTab==='notes'){tabContent=notes.length?notes.map(n=>`<div class="note-item"><div class="note-meta">${fmtDate(n.created_at)}</div><div class="note-text">${n.text}</div></div>`).join(''):`<div class="empty">No notes yet.</div>`;}
+  else if(state.selectedClientTab==='projects'){tabContent=projects.length?`<div class="table-wrap"><table><thead><tr><th>Project</th><th>Stage</th><th>Value</th></tr></thead><tbody>${projects.map(p=>`<tr><td>${p.name}</td><td>${statusBadge(p.stage)}</td><td>${p.value||'—'}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No projects.</div>`;}
+  else if(state.selectedClientTab==='quotes'){tabContent=quotes.length?`<div class="table-wrap"><table><thead><tr><th>Description</th><th>Amount</th><th>Status</th></tr></thead><tbody>${quotes.map(q=>`<tr><td>${q.description||'—'}</td><td>₹${Number(q.amount||0).toLocaleString('en-IN')}</td><td>${statusBadge(q.status)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No quotes.</div>`;}
   document.getElementById('client-detail-content').innerHTML=`
     <div class="detail-header">
       <div class="avatar" style="width:44px;height:44px;font-size:14px;">${initials(c.name)}</div>
@@ -365,28 +447,50 @@ function renderClientDetail(){
       <div>${statusBadge(c.status)}</div>
     </div>
     <div class="detail-grid">
-      <div class="info-block"><div class="info-label">Type</div><div class="info-val">${c.type||'—'}</div></div>
-      <div class="info-block"><div class="info-label">Budget</div><div class="info-val">${c.budget||'—'}</div></div>
-      <div class="info-block"><div class="info-label">Projects</div><div class="info-val">${projects.length}</div></div>
-      <div class="info-block"><div class="info-label">Open follow-ups</div><div class="info-val">${followups.length}</div></div>
+      ${infoFields.map(f=>`<div class="info-block"><div class="info-label">${f.label}</div><div class="info-val">${c[f.key]||'—'}</div></div>`).join('')}
     </div>
+    ${c.address?`<div class="note-item" style="margin-bottom:16px;"><div class="info-label">Address</div><div class="note-text">${c.address}</div></div>`:''}
     <div class="tabs">${['notes','projects','quotes'].map(t=>`<div class="tab ${state.selectedClientTab===t?'active':''}" onclick="setClientTab('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}</div>
     <div>${tabContent}</div>`;
 }
-function setClientTab(t){ state.selectedClientTab=t; renderClientDetail(); }
+function setClientTab(t){state.selectedClientTab=t;renderClientDetail();}
+
+function openEditClient(){
+  const c=state.clients.find(x=>x.id===state.selectedClient);if(!c)return;
+  openModal('edit-client');
+  buildClientForm('client-edit-fields',c);
+}
+
+async function updateClient(){
+  const data=getClientFormData();
+  if(!data.name){toast('Name is required');return;}
+  const{error}=await sb.from('clients').update(data).eq('id',state.selectedClient);
+  if(error){toast('Error: '+error.message);return;}
+  closeAllModals();toast('Client updated!');await loadAll();renderClientDetail();
+}
+
+async function deleteClient(){
+  if(!confirm('Delete this client? This cannot be undone.'))return;
+  await sb.from('client_notes').delete().eq('client_id',state.selectedClient);
+  await sb.from('followups').delete().eq('client_id',state.selectedClient);
+  await sb.from('quotes').delete().eq('client_id',state.selectedClient);
+  await sb.from('projects').delete().eq('client_id',state.selectedClient);
+  await sb.from('clients').delete().eq('id',state.selectedClient);
+  toast('Client deleted.');switchView('clients');await loadAll();
+}
 
 function renderPipeline(){
   const stages=['Lead','Proposal','In design','Done'];
   document.getElementById('pipeline-board').innerHTML=stages.map(s=>{
     const cards=state.projects.filter(p=>p.stage===s);
-    return `<div class="pipe-col"><div class="pipe-header">${s}<span class="pipe-count">${cards.length}</span></div>${cards.map(p=>{ const cl=state.clients.find(c=>c.id===p.client_id); return `<div class="pipe-card"><div class="pipe-card-name">${p.name}</div><div class="pipe-card-sub">${cl?cl.name:'—'}</div><div class="pipe-card-val">${p.value||'—'}</div></div>`; }).join('')}</div>`;
+    return`<div class="pipe-col"><div class="pipe-header">${s}<span class="pipe-count">${cards.length}</span></div>${cards.map(p=>{const cl=state.clients.find(c=>c.id===p.client_id);return`<div class="pipe-card"><div class="pipe-card-name">${p.name}</div><div class="pipe-card-sub">${cl?cl.name:'—'}</div><div class="pipe-card-val">${p.value||'—'}</div></div>`;}).join('')}</div>`;
   }).join('');
 }
 
 function renderQuotes(){
   const tb=document.getElementById('quotes-table');
-  if(!state.quotes.length){ tb.innerHTML=`<tr><td colspan="6" class="empty">No quotes yet.</td></tr>`; return; }
-  tb.innerHTML=state.quotes.map((q,i)=>{ const c=state.clients.find(x=>x.id===q.client_id); return `<tr><td>#${String(i+1).padStart(3,'0')}</td><td>${c?c.name:'—'}</td><td>${q.description||'—'}</td><td>₹${Number(q.amount||0).toLocaleString('en-IN')}</td><td>${statusBadge(q.status)}</td><td>${fmtDate(q.created_at)}</td></tr>`; }).join('');
+  if(!state.quotes.length){tb.innerHTML=`<tr><td colspan="6" class="empty">No quotes yet.</td></tr>`;return;}
+  tb.innerHTML=state.quotes.map((q,i)=>{const c=state.clients.find(x=>x.id===q.client_id);return`<tr><td>#${String(i+1).padStart(3,'0')}</td><td>${c?c.name:'—'}</td><td>${q.description||'—'}</td><td>₹${Number(q.amount||0).toLocaleString('en-IN')}</td><td>${statusBadge(q.status)}</td><td>${fmtDate(q.created_at)}</td></tr>`;}).join('');
 }
 
 function renderFollowups(){
@@ -395,58 +499,115 @@ function renderFollowups(){
   const dmap={High:'dot-high',Medium:'dot-med',Low:'dot-low'};
   const pending=state.followups.filter(f=>!f.done);
   const done=state.followups.filter(f=>f.done);
-  const renderList=list=>list.map(f=>{ const c=state.clients.find(x=>x.id===f.client_id); return `<div class="fu-item" style="${f.done?'opacity:0.5':''}"><div class="fu-dot ${dmap[f.priority]||'dot-low'}"></div><div style="flex:1;"><div style="font-size:13px;color:#1a1a1a;line-height:1.4;">${f.note||''}</div><div style="font-size:11px;color:#aaa;margin-top:3px;">${c?c.name:'—'} · Due ${fmtDate(f.due_date)} · <span class="badge ${pmap[f.priority]||'badge-low'}" style="font-size:10px;padding:1px 7px;">${f.priority}</span></div></div>${!f.done?`<button class="btn" style="font-size:11px;padding:5px 10px;flex-shrink:0;" onclick="markDone('${f.id}')"><i class="ti ti-check"></i> Done</button>`:''}</div>`; }).join('');
+  const renderList=list=>list.map(f=>{const c=state.clients.find(x=>x.id===f.client_id);return`<div class="fu-item" style="${f.done?'opacity:0.5':''}"><div class="fu-dot ${dmap[f.priority]||'dot-low'}"></div><div style="flex:1;"><div style="font-size:13px;color:#1a1a1a;">${f.note||''}</div><div style="font-size:11px;color:#aaa;margin-top:3px;">${c?c.name:'—'} · Due ${fmtDate(f.due_date)} · <span class="badge ${pmap[f.priority]||'badge-low'}" style="font-size:10px;padding:1px 7px;">${f.priority}</span></div></div>${!f.done?`<button class="btn" style="font-size:11px;padding:5px 10px;" onclick="markDone('${f.id}')"><i class="ti ti-check"></i> Done</button>`:''}</div>`;}).join('');
   el.innerHTML=`<div class="section-label" style="margin-bottom:12px;">Pending (${pending.length})</div>${pending.length?renderList(pending):`<div class="empty">All caught up!</div>`}${done.length?`<div class="section-label" style="margin:20px 0 12px;">Completed</div>${renderList(done)}`:''}`;
+}
+
+function renderSettings(){
+  const el=document.getElementById('settings-content');
+  el.innerHTML=`
+    <div class="settings-save-bar">
+      <div class="settings-save-info"><i class="ti ti-toggle-left" style="vertical-align:-2px;margin-right:6px;"></i> Toggle fields on or off — changes apply instantly to the Add Client form and client list.</div>
+      <button class="btn btn-primary" onclick="applyFieldSettings()"><i class="ti ti-check"></i> Save & apply</button>
+    </div>
+    <div class="settings-grid">
+      <div class="settings-card">
+        <div class="settings-card-title">Client form fields</div>
+        <div class="settings-card-sub">Choose which fields appear when adding or editing a client</div>
+        ${ALL_FIELDS.map(f=>`
+          <div class="field-toggle">
+            <div class="field-toggle-info">
+              <div class="field-toggle-name">${f.label}${f.required?' <span style="color:#A32D2D;font-size:10px;">required</span>':''}</div>
+              ${f.locked?'<div class="field-toggle-desc">Always shown</div>':''}
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="toggle-${f.key}" ${isFieldEnabled(f.key)?'checked':''} ${f.locked?'disabled':''} onchange="previewToggle('${f.key}',this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>`).join('')}
+      </div>
+      <div class="settings-card">
+        <div class="settings-card-title">What each field does</div>
+        <div class="settings-card-sub">Reference guide for all available fields</div>
+        ${ALL_FIELDS.map(f=>`
+          <div style="padding:8px 0;border-bottom:1px solid #f5f5f5;">
+            <div style="font-size:13px;font-weight:500;color:#1a1a1a;">${f.label}</div>
+            <div style="font-size:11px;color:#aaa;margin-top:2px;">${fieldDesc(f.key)}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function fieldDesc(key){
+  const descs={name:'Client full name — always required',email:'Email address for correspondence',phone:'Primary contact number',whatsapp:'WhatsApp number if different from phone',type:'Residential, commercial, hospitality etc.',status:'Current stage in your pipeline',budget:'Approximate project budget',city:'City or area where the project is',property_size:'Size of the space in square feet',project_type:'Type of interior work required',source:'How the client found your studio',timeline:'Expected project start date',alternate_phone:'Secondary contact number',address:'Full project or client address',notes:'Any notes from the first conversation'};
+  return descs[key]||'';
+}
+
+function previewToggle(key,val){ state.fieldSettings[key]=val; }
+
+function applyFieldSettings(){
+  ALL_FIELDS.forEach(f=>{
+    const el=document.getElementById('toggle-'+f.key);
+    if(el&&!f.locked)state.fieldSettings[f.key]=el.checked;
+  });
+  saveFieldSettings();
+  toast('Settings saved!');
+  renderClients();
 }
 
 function openModal(type){
   document.getElementById('modal-overlay').classList.remove('hidden');
   document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));
   document.getElementById('modal-'+type).classList.remove('hidden');
+  if(type==='add-client')buildClientForm('client-form-fields');
   if(['add-project','add-quote','add-followup'].includes(type)){
-    ['p-client','q-client','f-client'].forEach(sid=>{ const s=document.getElementById(sid); if(s) s.innerHTML=state.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join(''); });
+    ['p-client','q-client','f-client'].forEach(sid=>{const s=document.getElementById(sid);if(s)s.innerHTML=state.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');});
   }
 }
-function closeMO(e){ if(e.target===document.getElementById('modal-overlay')) closeAllModals(); }
-function closeAllModals(){ document.getElementById('modal-overlay').classList.add('hidden'); document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden')); }
+function closeMO(e){if(e.target===document.getElementById('modal-overlay'))closeAllModals();}
+function closeAllModals(){document.getElementById('modal-overlay').classList.add('hidden');document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));}
 
-async function addClient(){
-  const name=document.getElementById('c-name').value.trim(); if(!name) return;
-  const {error}=await sb.from('clients').insert({name,email:document.getElementById('c-email').value,phone:document.getElementById('c-phone').value,type:document.getElementById('c-type').value,status:document.getElementById('c-status').value,budget:document.getElementById('c-budget').value});
-  if(error){ toast('Error: '+error.message); return; }
-  closeAllModals(); toast('Client added!'); await loadAll();
+async function saveClient(){
+  const data=getClientFormData();
+  if(!data.name){toast('Name is required');return;}
+  const{error}=await sb.from('clients').insert(data);
+  if(error){toast('Error: '+error.message);return;}
+  closeAllModals();toast('Client added!');await loadAll();
 }
+
 async function addProject(){
-  const name=document.getElementById('p-name').value.trim(); if(!name) return;
-  const {error}=await sb.from('projects').insert({name,client_id:document.getElementById('p-client').value,stage:document.getElementById('p-stage').value,value:document.getElementById('p-value').value});
-  if(error){ toast('Error: '+error.message); return; }
-  closeAllModals(); toast('Project added!'); await loadAll();
+  const name=document.getElementById('p-name').value.trim();if(!name)return;
+  const{error}=await sb.from('projects').insert({name,client_id:document.getElementById('p-client').value,stage:document.getElementById('p-stage').value,value:document.getElementById('p-value').value});
+  if(error){toast('Error: '+error.message);return;}
+  closeAllModals();toast('Project added!');await loadAll();
 }
 async function addQuote(){
-  const {error}=await sb.from('quotes').insert({client_id:document.getElementById('q-client').value,description:document.getElementById('q-desc').value,amount:parseFloat(document.getElementById('q-amount').value)||0,status:document.getElementById('q-status').value});
-  if(error){ toast('Error: '+error.message); return; }
-  closeAllModals(); toast('Quote saved!'); await loadAll();
+  const{error}=await sb.from('quotes').insert({client_id:document.getElementById('q-client').value,description:document.getElementById('q-desc').value,amount:parseFloat(document.getElementById('q-amount').value)||0,status:document.getElementById('q-status').value});
+  if(error){toast('Error: '+error.message);return;}
+  closeAllModals();toast('Quote saved!');await loadAll();
 }
 async function addFollowup(){
-  const {error}=await sb.from('followups').insert({client_id:document.getElementById('f-client').value,note:document.getElementById('f-note').value,due_date:document.getElementById('f-date').value||null,priority:document.getElementById('f-priority').value,done:false});
-  if(error){ toast('Error: '+error.message); return; }
-  closeAllModals(); toast('Reminder saved!'); await loadAll();
+  const{error}=await sb.from('followups').insert({client_id:document.getElementById('f-client').value,note:document.getElementById('f-note').value,due_date:document.getElementById('f-date').value||null,priority:document.getElementById('f-priority').value,done:false});
+  if(error){toast('Error: '+error.message);return;}
+  closeAllModals();toast('Reminder saved!');await loadAll();
 }
 async function addNote(){
-  const text=document.getElementById('n-text').value.trim(); if(!text||!state.selectedClient) return;
-  const {error}=await sb.from('client_notes').insert({client_id:state.selectedClient,text});
-  if(error){ toast('Error: '+error.message); return; }
-  closeAllModals(); toast('Note saved!'); await loadAll(); renderClientDetail();
+  const text=document.getElementById('n-text').value.trim();if(!text||!state.selectedClient)return;
+  const{error}=await sb.from('client_notes').insert({client_id:state.selectedClient,text});
+  if(error){toast('Error: '+error.message);return;}
+  closeAllModals();toast('Note saved!');await loadAll();renderClientDetail();
 }
-async function markDone(id){ await sb.from('followups').update({done:true}).eq('id',id); await loadAll(); }
+async function markDone(id){await sb.from('followups').update({done:true}).eq('id',id);await loadAll();}
 
 function exportCSV(){
-  const rows=[['Name','Email','Phone','Type','Status','Budget'],...state.clients.map(c=>[c.name,c.email,c.phone,c.type,c.status,c.budget])];
+  const enabledKeys=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)).map(f=>f.key);
+  const headers=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)).map(f=>f.label);
+  const rows=[headers,...state.clients.map(c=>enabledKeys.map(k=>c[k]||''))];
   const csv=rows.map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='spacioworks-crm-clients.csv'; a.click();
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='spacioworks-clients.csv';a.click();
 }
 
-function toast(msg){ let t=document.getElementById('toast-el'); if(!t){ t=document.createElement('div'); t.id='toast-el'; t.className='toast'; document.body.appendChild(t); } t.textContent=msg; t.style.opacity='1'; setTimeout(()=>{ t.style.opacity='0'; },2500); }
+function toast(msg){let t=document.getElementById('toast-el');if(!t){t=document.createElement('div');t.id='toast-el';t.className='toast';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';setTimeout(()=>{t.style.opacity='0';},2500);}
 
 init();
 </script>
