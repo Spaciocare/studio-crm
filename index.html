@@ -249,7 +249,7 @@ tr.clickable:hover td{background:#fafafa;}
           <select class="filter-select" id="filter-status" onchange="renderLeads()"><option value="">All statuses</option><option>Hot</option><option>Warm</option><option>Cold</option><option>Won</option><option>Dead</option></select>
           <select class="filter-select" id="filter-city" onchange="renderLeads()"><option value="">All cities</option></select>
           <select class="filter-select" id="filter-source" onchange="renderLeads()"><option value="">All sources</option><option>Meta Ad</option><option>Referral</option></select>
-          <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Export</button>
+          <button class="btn" onclick="exportCSV()"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
           <button class="btn" onclick="openModal('import-leads')"><i class="ti ti-upload"></i> Import</button>
           <button class="btn btn-primary" onclick="openAddLead()"><i class="ti ti-plus"></i> Add lead</button>
         </div>
@@ -930,9 +930,42 @@ function exportCSV(){
   const leads=getFilteredLeads();
   const keys=ALL_FIELDS.filter(f=>state.fieldVisible[f.key]).map(f=>f.key);
   const headers=ALL_FIELDS.filter(f=>state.fieldVisible[f.key]).map(f=>f.label);
-  const rows=[headers,...leads.map(l=>keys.map(k=>Array.isArray(l[k])?(l[k]||[]).join('; '):(l[k]||'')))];
-  const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='spacioworks-leads.csv';a.click();
+
+  // Build rows array
+  const rows=leads.map(l=>
+    keys.reduce((obj,k,i)=>{
+      obj[headers[i]]=Array.isArray(l[k])?(l[k]||[]).join('; '):(l[k]||'');
+      return obj;
+    },{})
+  );
+
+  // Create workbook
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(rows,{header:headers});
+
+  // Style header row width
+  const colWidths=headers.map(h=>({wch:Math.max(h.length+4,16)}));
+  ws['!cols']=colWidths;
+
+  XLSX.utils.book_append_sheet(wb,ws,'Leads');
+
+  // Add summary sheet
+  const now=new Date();
+  const statusCounts={};
+  leads.forEach(l=>{const s=l.final_lead_status||'Unknown';statusCounts[s]=(statusCounts[s]||0)+1;});
+  const summaryRows=[
+    {'Metric':'Export date','Value':now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})},
+    {'Metric':'Total leads exported','Value':leads.length},
+    ...Object.entries(statusCounts).map(([s,v])=>({'Metric':s+' leads','Value':v})),
+  ];
+  const ws2=XLSX.utils.json_to_sheet(summaryRows);
+  ws2['!cols']=[{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Summary');
+
+  // Download
+  const filename='Spacioworks_Leads_'+now.toISOString().slice(0,10)+'.xlsx';
+  XLSX.writeFile(wb,filename);
+  toast('Exported '+leads.length+' leads to Excel!');
 }
 
 function openModal(type){
