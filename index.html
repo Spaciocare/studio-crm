@@ -480,7 +480,7 @@ const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 const SECTIONS=[
   {title:'Lead Info',fields:[
     {key:'lead_id',label:'Lead ID',type:'text',placeholder:'Auto or manual ID'},
-    {key:'created_time',label:'Created Time',type:'datetime-local'},
+    {key:'created_time',label:'Created Date',type:'date'},
     {key:'ad_id',label:'Ad ID',type:'text'},
     {key:'ad_name',label:'Ad Name',type:'text'},
     {key:'adset_id',label:'Adset ID',type:'text'},
@@ -1477,7 +1477,7 @@ function processImportRows(rows){
     // Direct mapping of exact column names from Spacioworks export/template
     const EXACT_MAP = {
       'Lead ID':'lead_id',
-      'Created Time':'created_time',
+      'Created Date':'created_time',
       'Ad ID':'ad_id',
       'Ad Name':'ad_name',
       'Adset ID':'adset_id',
