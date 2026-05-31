@@ -1099,7 +1099,7 @@ function renderTeamView(team,title){
 
     // Read-only fields - never inline editable
     if(k==='name') return `<td style="padding:8px 12px;"><div class="client-cell"><div class="avatar">${initials(l.name)}</div><strong style="font-size:13px;">${l.name||'—'}</strong></div></td>`;
-    if(k==='phone'||k==='email'||k==='whatsapp') return `<td style="padding:8px 12px;font-size:12px;">${l[k]||'—'}</td>`;
+    if(k==='phone'||k==='email') return `<td style="padding:8px 12px;font-size:12px;">${l[k]||'—'}</td>`;
     if(k==='design_tat') return `<td style="padding:8px 12px;"><span style="color:#7F77DD;font-weight:600;">${val||'—'}</span></td>`;
     if(f.type==='multiselect') return `<td style="padding:8px 12px;font-size:12px;color:#888;">${(l[k]||[]).slice(0,2).join(', ')||'—'}</td>`;
 
