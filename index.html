@@ -777,8 +777,8 @@ function openTeamEdit(id,team){
   const l=state.leads.find(x=>x.id===id);if(!l)return;
   const fields=state.groupFields[team]||[];
   document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'} (${team} team fields only)`;
-  buildLeadForm('lead-edit-body',l,fields);
   openModal('edit-lead');
+  setTimeout(()=>buildLeadForm('lead-edit-body',l,fields),10);
 }
 
 // ── LEAD FORM ─────────────────────────────────────────────────────────────
@@ -836,12 +836,12 @@ function getLeadFormData(limitFields=null){
   return data;
 }
 
-function openAddLead(){buildLeadForm('lead-form-body');openModal('add-lead');}
+function openAddLead(){openModal('add-lead');}
 function openEditLead(){
   const l=state.leads.find(x=>x.id===state.selectedLead);if(!l)return;
   document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'}`;
-  buildLeadForm('lead-edit-body',l);
   openModal('edit-lead');
+  setTimeout(()=>buildLeadForm('lead-edit-body',l),10);
 }
 
 async function saveLead(){
@@ -938,10 +938,14 @@ function exportCSV(){
 function openModal(type){
   document.getElementById('modal-overlay').classList.remove('hidden');
   document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));
-  document.getElementById('modal-'+type).classList.remove('hidden');
+  const target = document.getElementById('modal-'+type);
+  if(!target){ console.error('Modal not found: modal-'+type); return; }
+  target.classList.remove('hidden');
+  if(type==='import-leads') setTimeout(initImportModal, 50);
+  if(type==='add-lead') setTimeout(()=>buildLeadForm('lead-form-body'), 10);
 }
 function closeMO(e){if(e.target===document.getElementById('modal-overlay'))closeAllModals();}
-function closeAllModals(){document.getElementById('modal-overlay').classList.add('hidden');document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));}
+function closeAllModals(){document.getElementById('modal-overlay').classList.add('hidden');document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));resetImport&&resetImport();}
 
 function toast(msg){let t=document.getElementById('toast-el');if(!t){t=document.createElement('div');t.id='toast-el';t.className='toast';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';setTimeout(()=>{t.style.opacity='0';},2500);}
 
@@ -1089,11 +1093,17 @@ async function confirmImport(){
 }
 
 function resetImport(){
-  importData = [];
-  document.getElementById('import-step-1').style.display='block';
-  document.getElementById('import-step-2').style.display='none';
-  document.getElementById('import-confirm-btn').classList.add('hidden');
-  document.getElementById('import-file-input').value='';
+  try{
+    importData = [];
+    const s1=document.getElementById('import-step-1');
+    const s2=document.getElementById('import-step-2');
+    const btn=document.getElementById('import-confirm-btn');
+    const inp=document.getElementById('import-file-input');
+    if(s1)s1.style.display='block';
+    if(s2)s2.style.display='none';
+    if(btn)btn.classList.add('hidden');
+    if(inp)inp.value='';
+  }catch(e){}
 }
 
 function downloadTemplate(){
@@ -1116,12 +1126,7 @@ function downloadTemplate(){
   toast('Template downloaded!');
 }
 
-// Override openModal to init import hints
-const _origOpenModal = openModal;
-function openModal(type){
-  _origOpenModal(type);
-  if(type==='import-leads') setTimeout(initImportModal, 50);
-}
+
 
 
 init();
