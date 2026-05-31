@@ -1025,6 +1025,10 @@ function handleImportFile(input){
 function processImportRows(rows){
   if(!rows.length){ toast('No data found in file.'); return; }
 
+  // Filter out completely empty rows first
+  rows = rows.filter(row=>Object.values(row).some(v=>v!==null&&v!==undefined&&String(v).trim()!==''));
+  if(!rows.length){ toast('No data found in file after filtering empty rows.'); return; }
+
   // Map file columns to CRM field keys (flexible matching)
   const allKeys = ALL_FIELDS.map(f=>f.key);
   const fileHeaders = Object.keys(rows[0]);
@@ -1107,19 +1111,24 @@ function processImportRows(rows){
     `<span style="color:#27500A;">✓ ${valid} leads ready to import</span>${invalid?` &nbsp;<span style="color:#A32D2D;">✗ ${invalid} rows missing name (will be skipped)</span>`:''}` +
     `<br><span style="color:#888;font-size:11px;font-weight:400;">${matched} of ${fileHeaders.length} columns matched</span>`;
 
-  // Preview table - show mapped fields only
-  const previewFields = Object.values(headerMap).slice(0,8);
+  // Preview table - show columns that have actual data (skip fully empty ones)
+  const allMappedFields = Object.values(headerMap);
+  const previewFields = allMappedFields.filter(key=>{
+    return importData.slice(0,20).some(r=>r[key]&&String(r[key]).trim()!=='');
+  }).slice(0,8);
+  // fallback if all empty show first 8
+  const displayFields = previewFields.length ? previewFields : allMappedFields.slice(0,8);
   const thead = document.getElementById('import-preview-head');
   const tbody = document.getElementById('import-preview-body');
-  thead.innerHTML = `<tr><th style="padding:8px 10px;font-size:10px;color:#aaa;text-align:left;">#</th>${previewFields.map(k=>`<th style="padding:8px 10px;font-size:10px;color:#aaa;text-align:left;">${fieldLabel(k)}</th>`).join('')}</tr>`;
+  thead.innerHTML = `<tr><th style="padding:8px 10px;font-size:10px;color:#aaa;text-align:left;">#</th>${displayFields.map(k=>`<th style="padding:8px 10px;font-size:10px;color:#aaa;text-align:left;">${fieldLabel(k)}</th>`).join('')}</tr>`;
   tbody.innerHTML = importData.slice(0,20).map(r=>`
     <tr style="${!r._valid?'opacity:0.4;':''}">
       <td style="padding:7px 10px;border-bottom:1px solid #f5f5f5;color:#aaa;">${r._rowNum}</td>
-      ${previewFields.map(k=>`<td style="padding:7px 10px;border-bottom:1px solid #f5f5f5;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r[k]||'—'}</td>`).join('')}
+      ${displayFields.map(k=>`<td style="padding:7px 10px;border-bottom:1px solid #f5f5f5;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r[k]||'—'}</td>`).join('')}
     </tr>`).join('');
 
   if(importData.length>20){
-    tbody.innerHTML += `<tr><td colspan="${previewFields.length+1}" style="padding:10px;text-align:center;color:#aaa;font-size:12px;">... and ${importData.length-20} more rows</td></tr>`;
+    tbody.innerHTML += `<tr><td colspan="${displayFields.length+1}" style="padding:10px;text-align:center;color:#aaa;font-size:12px;">... and ${importData.length-20} more rows</td></tr>`;
   }
 
   // Warnings
@@ -1133,8 +1142,13 @@ function processImportRows(rows){
 
 async function confirmImport(){
   const toImport = importData.filter(r=>r._valid).map(r=>{
-    const lead = {...r};
-    delete lead._rowNum; delete lead._valid;
+    const lead = {};
+    ALL_FIELDS.forEach(f=>{
+      if(r[f.key]!==undefined && r[f.key]!==null && String(r[f.key]).trim()!==''){
+        // Convert phone numbers stored as integers back to string
+        lead[f.key] = String(r[f.key]).trim();
+      }
+    });
     return lead;
   });
   if(!toImport.length){ toast('No valid leads to import.'); return; }
