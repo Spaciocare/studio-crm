@@ -932,7 +932,7 @@ function renderLeadDetail(){
   // Stage progress bar
   const stages=[
     {key:'calling',label:'Calling',check:l=>true,done:l=>l.connected_call_status==='Lead Qualified'},
-    {key:'sales',label:'Sales & Architect',check:l=>l.connected_call_status==='Lead Qualified',done:l=>l.quote_status==='30% Payment Collected'},
+    {key:'sales',label:'Sales & Architect',check:l=>l.connected_call_status==='Lead Qualified'&&['Received','Not Available'].includes(l.floor_plan_status),done:l=>l.quote_status==='30% Payment Collected'},
     {key:'design',label:'Design',check:l=>l.quote_status==='30% Payment Collected',done:l=>l.final_design_stage==='Design Completed'},
     {key:'project',label:'Project Mgmt',check:l=>l.final_design_stage==='Design Completed',done:l=>l.final_project_stage==='Handover Certificate is Given'},
   ];
@@ -998,7 +998,7 @@ function renderPipeline(){
     return`<div class="pipe-col">
       <div class="pipe-header" style="color:${colors[s]};">${s}<span class="pipe-count">${cards.length}</span></div>
       ${cards.map(l=>{
-        const teamStage=l.final_design_stage==='Design Completed'?'Project Mgmt':l.quote_status==='30% Payment Collected'?'Design':l.connected_call_status==='Lead Qualified'?'Sales':'Calling';
+        const teamStage=l.final_design_stage==='Design Completed'?'Project Mgmt':l.quote_status==='30% Payment Collected'?'Design':(l.connected_call_status==='Lead Qualified'&&['Received','Not Available'].includes(l.floor_plan_status))?'Sales':'Calling';
         return`<div class="pipe-card ${s.toLowerCase()}" onclick="openLead('${l.id}')">
           <div class="pipe-card-name">${l.name||'—'}</div>
           <div class="pipe-card-sub">${l.city||''} ${l.property_type?'· '+l.property_type:''}</div>
@@ -1018,7 +1018,11 @@ function getTeamLeads(team){
   if(team==='calling') return state.leads; // Calling sees all leads
   if(team==='sales'){
     // Visible when Connected Call Status = "Lead Qualified"
-    return state.leads.filter(l=>l.connected_call_status==='Lead Qualified');
+    // AND Floor Plan Status = "Received" or "Not Available"
+    return state.leads.filter(l=>
+      l.connected_call_status==='Lead Qualified' &&
+      ['Received','Not Available'].includes(l.floor_plan_status)
+    );
   }
   if(team==='design'){
     // Visible when Quote Status = "30% Payment Collected"
@@ -1037,8 +1041,8 @@ function renderTeamView(team,title){
   const el=document.getElementById(team+'-content');
   if(!fields.length){el.innerHTML=`<div class="empty">No fields assigned to this team. Go to Settings → Team groups.</div>`;return;}
   const gateInfo={
-    calling:{color:'#E6F1FB',text:'#0C447C',msg:'Shows all leads. Leads move to Sales & Architect when Connected Call Status = <strong>Lead Qualified</strong>'},
-    sales:{color:'#EAF3DE',text:'#27500A',msg:'Shows leads where Connected Call Status = <strong>Lead Qualified</strong>. Leads move to Design Team when Quote Status = <strong>30% Payment Collected</strong>'},
+    calling:{color:'#E6F1FB',text:'#0C447C',msg:'Shows all leads. Leads move to Sales & Architect when Connected Call Status = <strong>Lead Qualified</strong> AND Floor Plan Status = <strong>Received</strong> or <strong>Not Available</strong>'},
+    sales:{color:'#EAF3DE',text:'#27500A',msg:'Shows leads where Connected Call Status = <strong>Lead Qualified</strong> AND Floor Plan Status = <strong>Received / Not Available</strong>. Leads move to Design Team when Quote Status = <strong>30% Payment Collected</strong>'},
     design:{color:'#EEEDFE',text:'#3C3489',msg:'Shows leads where Quote Status = <strong>30% Payment Collected</strong>. Leads move to Project Management when Final Design Stage = <strong>Design Completed</strong>'},
     project:{color:'#FAEEDA',text:'#633806',msg:'Shows leads where Final Design Stage = <strong>Design Completed</strong>'},
   };
