@@ -204,7 +204,20 @@ tr.clickable:hover td{background:#fafafa;}
 .inline-input{font-family:inherit;outline:none;border-radius:4px;}
 .inline-input:hover,.inline-input:focus{background:#EEEDFE;padding:2px 4px;}
 td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
-[id^="view-"]{flex-direction:column;}::-webkit-scrollbar{width:6px;height:6px;}.webkit-scrollbar-track{background:#f1f1f1;border-radius:99px;}::-webkit-scrollbar-thumb{background:#ddd;border-radius:99px;}::-webkit-scrollbar-thumb:hover{background:#bbb;}*{scrollbar-width:thin;scrollbar-color:#ddd #f1f1f1;}</style>
+[id^="view-"]{flex-direction:column;}.drag-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:500;cursor:grab;border:1px solid #ddd;background:#fff;color:#1a1a1a;margin:3px;user-select:none;transition:box-shadow 0.15s;}
+.drag-chip:active{cursor:grabbing;}
+.drag-chip.dragging{opacity:0.4;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.drag-chip.drag-over{border:2px dashed #7F77DD;background:#EEEDFE;}
+.drag-chip.on{background:#EEEDFE;color:#3C3489;border-color:#C5C2F6;}
+.drag-chip .drag-handle{color:#ccc;font-size:14px;cursor:grab;}
+.drag-chip .remove-btn{color:#ccc;cursor:pointer;font-size:14px;line-height:1;}
+.drag-chip .remove-btn:hover{color:#A32D2D;}
+.drop-zone{min-height:60px;border:2px dashed #eee;border-radius:10px;padding:8px;display:flex;flex-wrap:wrap;background:#fafafa;transition:border-color 0.15s;}
+.drop-zone.drag-active{border-color:#7F77DD;background:#EEEDFE;}
+.available-pool{display:flex;flex-wrap:wrap;gap:4px;padding:10px;background:#f5f4f0;border-radius:10px;min-height:48px;}
+.pool-chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;margin:2px;transition:all 0.12s;}
+.pool-chip:hover{background:#EEEDFE;color:#3C3489;border-color:#C5C2F6;}
+::-webkit-scrollbar{width:6px;height:6px;}.webkit-scrollbar-track{background:#f1f1f1;border-radius:99px;}::-webkit-scrollbar-thumb{background:#ddd;border-radius:99px;}::-webkit-scrollbar-thumb:hover{background:#bbb;}*{scrollbar-width:thin;scrollbar-color:#ddd #f1f1f1;}</style>
 </head>
 <body>
 <div id="auth-screen" class="auth-wrap">
