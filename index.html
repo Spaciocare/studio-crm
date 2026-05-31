@@ -1042,9 +1042,13 @@ async function addNote(){
 // ── SETTINGS PAGE ─────────────────────────────────────────────────────────
 function showSettingsPanel(panel){
   document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden'));
-  document.getElementById('settings-panel-'+panel).classList.remove('hidden');
+  const target = document.getElementById('settings-panel-'+panel);
+  if(target) target.classList.remove('hidden');
   document.querySelectorAll('.settings-nav-item').forEach(i=>i.classList.remove('active'));
-  event.target.classList.add('active');
+  if(event && event.target) event.target.classList.add('active');
+  if(panel==='users') loadUsers();
+  if(panel==='groups') renderGroupSettings();
+  if(panel==='fields') renderFieldToggles();
 }
 
 function renderSettingsPage(){
@@ -1271,11 +1275,7 @@ async function removeUser(id, name){
 }
 
 // Load users when settings panel is opened
-const _origShowSettings = showSettingsPanel;
-function showSettingsPanel(panel){
-  _origShowSettings(panel);
-  if(panel==='users') loadUsers();
-}
+
 
 // ── BULK IMPORT ───────────────────────────────────────────────────────────
 let importData = [];
