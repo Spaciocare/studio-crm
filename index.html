@@ -6,6 +6,7 @@
 <title>Studio CRM · Spacioworks</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -249,6 +250,7 @@ tr.clickable:hover td{background:#fafafa;}
           <select class="filter-select" id="filter-city" onchange="renderLeads()"><option value="">All cities</option></select>
           <select class="filter-select" id="filter-source" onchange="renderLeads()"><option value="">All sources</option><option>Meta Ad</option><option>Referral</option></select>
           <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Export</button>
+          <button class="btn" onclick="openModal('import-leads')"><i class="ti ti-upload"></i> Import</button>
           <button class="btn btn-primary" onclick="openAddLead()"><i class="ti ti-plus"></i> Add lead</button>
         </div>
       </div>
@@ -338,6 +340,49 @@ tr.clickable:hover td{background:#fafafa;}
     <div class="mfield" style="margin-top:8px;"><label>Note</label><textarea id="n-text" placeholder="Meeting notes, call summary, decisions..." style="min-height:100px;"></textarea></div>
     <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addNote()">Save note</button></div>
   </div>
+
+  <div class="modal hidden" id="modal-import-leads">
+    <div class="modal-title">Bulk import leads <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="modal-sub">Upload a CSV or Excel file to import multiple leads at once</div>
+
+    <div id="import-step-1">
+      <div style="border:2px dashed #ddd;border-radius:12px;padding:32px;text-align:center;cursor:pointer;background:#fafafa;" onclick="document.getElementById('import-file-input').click()" id="drop-zone">
+        <i class="ti ti-file-spreadsheet" style="font-size:40px;color:#7F77DD;display:block;margin-bottom:12px;"></i>
+        <div style="font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:6px;">Click to upload or drag & drop</div>
+        <div style="font-size:12px;color:#aaa;">Supports .xlsx, .xls, .csv files</div>
+        <input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFile(this)">
+      </div>
+
+      <div style="margin-top:20px;background:#EEEDFE;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:700;color:#3C3489;margin-bottom:8px;"><i class="ti ti-info-circle"></i> Column names your file should use</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;" id="field-hints"></div>
+      </div>
+
+      <div style="margin-top:12px;text-align:center;">
+        <button class="btn btn-sm" onclick="downloadTemplate()"><i class="ti ti-download"></i> Download template file</button>
+      </div>
+    </div>
+
+    <div id="import-step-2" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a;" id="import-summary"></div>
+        <button class="btn btn-sm" onclick="resetImport()"><i class="ti ti-refresh"></i> Upload different file</button>
+      </div>
+      <div style="border:1px solid #eee;border-radius:10px;overflow:auto;max-height:320px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead id="import-preview-head" style="position:sticky;top:0;background:#fafafa;"></thead>
+          <tbody id="import-preview-body"></tbody>
+        </table>
+      </div>
+      <div id="import-warnings" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="closeAllModals()">Cancel</button>
+      <button class="btn btn-primary hidden" id="import-confirm-btn" onclick="confirmImport()"><i class="ti ti-check"></i> Import leads</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -900,7 +945,196 @@ function closeAllModals(){document.getElementById('modal-overlay').classList.add
 
 function toast(msg){let t=document.getElementById('toast-el');if(!t){t=document.createElement('div');t.id='toast-el';t.className='toast';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';setTimeout(()=>{t.style.opacity='0';},2500);}
 
+
+// ── BULK IMPORT ───────────────────────────────────────────────────────────
+let importData = [];
+
+function initImportModal(){
+  // Show field hints
+  const hints = document.getElementById('field-hints');
+  if(hints){
+    hints.innerHTML = ALL_FIELDS.map(f=>
+      `<span style="background:#fff;border:1px solid #C5C2F6;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:600;color:#3C3489;">${f.key}</span>`
+    ).join('');
+  }
+}
+
+function handleImportFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  const isCSV = file.name.endsWith('.csv');
+  reader.onload = function(e){
+    try{
+      let rows = [];
+      if(isCSV){
+        const text = e.target.result;
+        rows = parseCSV(text);
+      } else {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:'array', cellDates:true});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      }
+      processImportRows(rows);
+    } catch(err){
+      toast('Error reading file: ' + err.message);
+    }
+  };
+  if(isCSV) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function parseCSV(text){
+  const lines = text.split('\n').filter(l=>l.trim());
+  if(lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line=>{
+    const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)||line.split(',');
+    const obj = {};
+    headers.forEach((h,i)=>{ obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim(); });
+    return obj;
+  });
+}
+
+function processImportRows(rows){
+  if(!rows.length){ toast('No data found in file.'); return; }
+
+  // Map file columns to CRM field keys (flexible matching)
+  const allKeys = ALL_FIELDS.map(f=>f.key);
+  const fileHeaders = Object.keys(rows[0]);
+
+  function matchKey(header){
+    const h = header.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    // exact match
+    let match = allKeys.find(k=>k===header||k===h);
+    if(match) return match;
+    // partial match
+    match = allKeys.find(k=>h.includes(k)||k.includes(h));
+    return match||null;
+  }
+
+  const headerMap = {};
+  fileHeaders.forEach(h=>{ const k=matchKey(h); if(k) headerMap[h]=k; });
+
+  importData = rows.map((row,i)=>{
+    const lead = {};
+    fileHeaders.forEach(h=>{ if(headerMap[h]) lead[headerMap[h]] = String(row[h]||'').trim(); });
+    lead._rowNum = i+2;
+    lead._valid = !!lead.name;
+    return lead;
+  });
+
+  const valid = importData.filter(r=>r._valid).length;
+  const invalid = importData.length - valid;
+  const matched = Object.keys(headerMap).length;
+
+  document.getElementById('import-step-1').style.display='none';
+  document.getElementById('import-step-2').style.display='block';
+  document.getElementById('import-summary').innerHTML =
+    `<span style="color:#27500A;">✓ ${valid} leads ready to import</span>${invalid?` &nbsp;<span style="color:#A32D2D;">✗ ${invalid} rows missing name (will be skipped)</span>`:''}` +
+    `<br><span style="color:#888;font-size:11px;font-weight:400;">${matched} of ${fileHeaders.length} columns matched</span>`;
+
+  // Preview table - show mapped fields only
+  const previewFields = Object.values(headerMap).slice(0,8);
+  const thead = document.getElementById('import-preview-head');
+  const tbody = document.getElementById('import-preview-body');
+  thead.innerHTML = `<tr><th style="padding:8px 10px;font-size:10px;color:#aaa;text-align:left;">#</th>${previewFields.map(k=>`<th style="padding:8px 10px;font-size:10px;color:#aaa;text-align:left;">${fieldLabel(k)}</th>`).join('')}</tr>`;
+  tbody.innerHTML = importData.slice(0,20).map(r=>`
+    <tr style="${!r._valid?'opacity:0.4;':''}">
+      <td style="padding:7px 10px;border-bottom:1px solid #f5f5f5;color:#aaa;">${r._rowNum}</td>
+      ${previewFields.map(k=>`<td style="padding:7px 10px;border-bottom:1px solid #f5f5f5;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r[k]||'—'}</td>`).join('')}
+    </tr>`).join('');
+
+  if(importData.length>20){
+    tbody.innerHTML += `<tr><td colspan="${previewFields.length+1}" style="padding:10px;text-align:center;color:#aaa;font-size:12px;">... and ${importData.length-20} more rows</td></tr>`;
+  }
+
+  // Warnings
+  const unmatched = fileHeaders.filter(h=>!headerMap[h]);
+  let warnings = '';
+  if(unmatched.length) warnings += `<div style="background:#FAEEDA;border-radius:8px;padding:10px 12px;font-size:12px;color:#633806;"><strong>Unmatched columns (will be ignored):</strong> ${unmatched.join(', ')}</div>`;
+  document.getElementById('import-warnings').innerHTML = warnings;
+
+  document.getElementById('import-confirm-btn').classList.remove('hidden');
+}
+
+async function confirmImport(){
+  const toImport = importData.filter(r=>r._valid).map(r=>{
+    const lead = {...r};
+    delete lead._rowNum; delete lead._valid;
+    return lead;
+  });
+  if(!toImport.length){ toast('No valid leads to import.'); return; }
+
+  const btn = document.getElementById('import-confirm-btn');
+  btn.textContent = 'Importing...'; btn.disabled = true;
+
+  // Batch insert in chunks of 50
+  const chunkSize = 50;
+  let imported = 0;
+  let errors = 0;
+  for(let i=0; i<toImport.length; i+=chunkSize){
+    const chunk = toImport.slice(i, i+chunkSize);
+    const {error} = await sb.from('leads').insert(chunk);
+    if(error){ errors += chunk.length; console.error(error); }
+    else imported += chunk.length;
+  }
+
+  closeAllModals();
+  resetImport();
+  await loadAll();
+  if(errors) toast(`Imported ${imported} leads. ${errors} failed.`);
+  else toast(`✓ Successfully imported ${imported} leads!`);
+}
+
+function resetImport(){
+  importData = [];
+  document.getElementById('import-step-1').style.display='block';
+  document.getElementById('import-step-2').style.display='none';
+  document.getElementById('import-confirm-btn').classList.add('hidden');
+  document.getElementById('import-file-input').value='';
+}
+
+function downloadTemplate(){
+  const headers = ALL_FIELDS.map(f=>f.key);
+  const example = ALL_FIELDS.map(f=>{
+    if(f.type==='select') return f.options?.[1]||'';
+    if(f.type==='multiselect') return 'Wardrobes;False Ceiling';
+    if(f.type==='date') return '2025-06-01';
+    if(f.key==='name') return 'John Smith';
+    if(f.key==='phone') return '+91 98765 43210';
+    if(f.key==='email') return 'john@email.com';
+    if(f.key==='interior_budget') return '₹15,00,000';
+    return '';
+  });
+  const csv = [headers.join(','), example.join(',')].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'spacioworks-import-template.csv';
+  a.click();
+  toast('Template downloaded!');
+}
+
+// Override openModal to init import hints
+const _origOpenModal = openModal;
+function openModal(type){
+  _origOpenModal(type);
+  if(type==='import-leads') setTimeout(initImportModal, 50);
+}
+
+
 init();
+
+// Drag and drop for import
+document.addEventListener('DOMContentLoaded', ()=>{
+  const dz = document.getElementById('drop-zone');
+  if(!dz) return;
+  dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.style.borderColor='#7F77DD'; dz.style.background='#EEEDFE'; });
+  dz.addEventListener('dragleave', ()=>{ dz.style.borderColor='#ddd'; dz.style.background='#fafafa'; });
+  dz.addEventListener('drop', e=>{ e.preventDefault(); dz.style.borderColor='#ddd'; dz.style.background='#fafafa'; const f=e.dataTransfer.files[0]; if(f){ const inp=document.getElementById('import-file-input'); const dt=new DataTransfer(); dt.items.add(f); inp.files=dt.files; handleImportFile(inp); } });
+});
+
 </script>
 </body>
 </html>
