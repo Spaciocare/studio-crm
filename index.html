@@ -586,10 +586,19 @@ async function init(){
 
 function showAuth(){document.getElementById('auth-screen').classList.remove('hidden');document.getElementById('app-screen').classList.add('hidden');}
 function showApp(u){
-  document.getElementById('auth-screen').classList.add('hidden');
+  // Don't hide auth screen yet - wait until role is confirmed
   document.getElementById('user-email-display').textContent=u.email;
-  // Load user role then render UI
   loadUserRole(u).then(()=>{
+    if(state.currentRole === 'denied'){
+      // Keep auth screen, show error
+      document.getElementById('auth-screen').classList.remove('hidden');
+      document.getElementById('app-screen').classList.add('hidden');
+      document.getElementById('auth-err').textContent = 'Access denied: ' + (state.currentUser?.email||'') + ' has not been added to the team. Contact your admin.';
+      document.getElementById('auth-err').classList.remove('hidden');
+      sb.auth.signOut();
+      return;
+    }
+    document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');
     applyRoleUI();
     loadAll();
@@ -650,14 +659,7 @@ function applyRoleUI(){
   const roleEl = document.getElementById('user-role-display');
   if(roleEl) roleEl.textContent = isAdmin() ? 'Admin' : (TEAM_LABELS[team] || 'Team Member');
 
-  if(state.currentRole === 'denied'){
-    document.getElementById('app-screen').classList.add('hidden');
-    document.getElementById('auth-screen').classList.remove('hidden');
-    document.getElementById('auth-err').textContent = 'Access denied. Your email (' + u.email + ') has not been added to the team. Please ask your admin (moorthydilip@spacioworks.in) to add you in Settings → Team members.';
-    document.getElementById('auth-err').classList.remove('hidden');
-    sb.auth.signOut();
-    return;
-  }
+  // Denied case handled in showApp
 
   if(isAdmin()){
     // Admin sees everything
@@ -958,14 +960,6 @@ function renderLeadDetail(){
   if(btnEdit) btnEdit.style.display = isViewOnly() ? 'none' : '';
   if(btnDelete) btnDelete.style.display = isAdmin() ? '' : 'none';
   if(btnNote) btnNote.style.display = isViewOnly() ? 'none' : '';
-
-  // Update action buttons based on role
-  const btnEdit = document.getElementById('btn-edit-lead');
-  const btnDelete = document.getElementById('btn-delete-lead');
-  const btnNote = document.getElementById('btn-add-note');
-  if(btnEdit) btnEdit.style.display = isViewOnly()?'none':'';
-  if(btnDelete) btnDelete.style.display = isAdmin()?'':'none';
-  if(btnNote) btnNote.style.display = isViewOnly()?'none':'';
 
   document.getElementById('lead-detail-content').innerHTML=stageBar+`
     <div class="detail-header">
