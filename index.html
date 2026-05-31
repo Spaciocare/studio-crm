@@ -648,8 +648,7 @@ function applyRoleUI(){
 
   // Update role badge
   const roleEl = document.getElementById('user-role-display');
-  const teamLabels = {calling:'Calling Team',sales:'Sales & Architect',design:'Design Team',project:'Project Mgmt',admin:'Admin'};
-  if(roleEl) roleEl.textContent = isAdmin() ? 'Admin' : (teamLabels[team] || 'Team Member');
+  if(roleEl) roleEl.textContent = isAdmin() ? 'Admin' : (TEAM_LABELS[team] || 'Team Member');
 
   if(state.currentRole === 'denied'){
     document.getElementById('app-screen').classList.add('hidden');
@@ -688,8 +687,7 @@ function applyRoleUI(){
   });
 
   // Update role label
-  const teamLabels = {calling:'Calling Team',sales:'Sales & Architect',design:'Design Team',project:'Project Mgmt'};
-  document.getElementById('user-role-display').textContent = teamLabels[team] || 'Team Member';
+  document.getElementById('user-role-display').textContent = TEAM_LABELS[team] || 'Team Member';
 
   // Redirect to dashboard by default
   switchView('dashboard');
@@ -1078,8 +1076,7 @@ function openTeamEdit(id,team){
   // Use the logged-in user's team fields if not admin
   const effectiveTeam = isAdmin() ? team : state.currentTeam;
   const fields = state.groupFields[effectiveTeam]||[];
-  const teamLabels={calling:'Calling Team',sales:'Sales & Architect',design:'Design Team',project:'Project Mgmt'};
-  document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'} · ${teamLabels[effectiveTeam]||effectiveTeam} fields`;
+  document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'} · ${TEAM_LABELS[effectiveTeam]||effectiveTeam} fields`;
   openModal('edit-lead');
   setTimeout(()=>buildLeadForm('lead-edit-body',l,fields),10);
 }
