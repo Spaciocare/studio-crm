@@ -1030,13 +1030,56 @@ function processImportRows(rows){
   const fileHeaders = Object.keys(rows[0]);
 
   function matchKey(header){
-    const h = header.toLowerCase().replace(/[^a-z0-9]/g,'_');
-    // exact match
-    let match = allKeys.find(k=>k===header||k===h);
-    if(match) return match;
-    // partial match
-    match = allKeys.find(k=>h.includes(k)||k.includes(h));
-    return match||null;
+    const h = header.toLowerCase().trim();
+    const hClean = h.replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+
+    // 1. Exact key match (e.g. "unit_street")
+    let match = ALL_FIELDS.find(f=>f.key===header||f.key===h||f.key===hClean);
+    if(match) return match.key;
+
+    // 2. Exact label match (e.g. "Unit & Street")
+    match = ALL_FIELDS.find(f=>f.label.toLowerCase()===h);
+    if(match) return match.key;
+
+    // 3. Label cleaned match (e.g. "unit___street" -> "unit_street")
+    match = ALL_FIELDS.find(f=>{
+      const lClean = f.label.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+      return lClean===hClean;
+    });
+    if(match) return match.key;
+
+    // 4. Common alias mappings
+    const aliases={
+      'mobile':'phone','mobile_number':'phone','contact':'phone','contact_number':'phone',
+      'whatsapp_number':'whatsapp','wa_number':'whatsapp',
+      'full_name':'name','customer_name':'name','client_name':'name','lead_name':'name',
+      'mail':'email','email_id':'email','email_address':'email',
+      'status':'final_lead_status','lead_status':'final_lead_status',
+      'source':'lead_source','lead_source_type':'lead_source',
+      'budget':'interior_budget','project_budget':'interior_budget',
+      'handover':'expected_handover_date','handover_date':'expected_handover_date',
+      'property':'property_type','prop_type':'property_type',
+      'segment':'property_segment','prop_segment':'property_segment',
+      'specification':'property_specification','bhk':'property_specification','prop_spec':'property_specification',
+      'builder':'builder_name','project':'project_name',
+      'area':'location_area','locality':'location_area','location':'location_area',
+      'pin':'pincode','pin_code':'pincode','zip':'pincode',
+      'unit':'unit_street','street':'unit_street','unit_street':'unit_street','unit___street':'unit_street',
+      'campaign':'campaign_name','adset':'adset_name','ad':'ad_name','form':'form_name',
+      'organic':'is_organic','call_date':'first_call_date','architect':'architect_call_status',
+      'requirement':'requirements','req':'requirements',
+      'quote':'quote_status','comment':'comments','remark':'comments','remarks':'comments',
+      'first_call':'first_call_date','recent_call':'recent_call_date','last_call':'recent_call_date',
+      'call':'call_status','connected_status':'connected_call_status',
+      'architect_status':'architect_call_status','arch_date':'architect_call_date',
+    };
+    if(aliases[hClean]) return aliases[hClean];
+
+    // 5. Fuzzy — check if cleaned header contains a key or vice versa
+    match = ALL_FIELDS.find(f=>hClean.includes(f.key)||f.key.includes(hClean));
+    if(match) return match.key;
+
+    return null;
   }
 
   const headerMap = {};
