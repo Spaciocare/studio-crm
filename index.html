@@ -1124,7 +1124,15 @@ function getLeadFormData(limitFields=null){
       if(container)data[f.key]=[...container.querySelectorAll('.ms-chip.selected')].map(c=>c.dataset.val);
     }else{
       const el=document.getElementById('lf-'+f.key);
-      if(el)data[f.key]=el.value;
+      if(el){
+        const val=el.value;
+        // Convert empty date/datetime fields to null to avoid DB type errors
+        if((f.type==='date'||f.type==='datetime-local')&&val===''){
+          data[f.key]=null;
+        } else {
+          data[f.key]=val===''?null:val;
+        }
+      }
     }
   });
   return data;
