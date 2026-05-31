@@ -5,141 +5,196 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Studio CRM · Spacioworks</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F4F0;color:#1a1a1a;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F4F0;color:#1a1a1a;font-size:13px;}
 .hidden{display:none!important;}
+/* AUTH */
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;}
 .auth-card{background:#fff;border:1px solid #e5e5e5;border-radius:16px;padding:36px;width:100%;max-width:380px;box-shadow:0 2px 16px rgba(0,0,0,0.06);}
-.auth-logo{font-size:20px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
+.auth-logo{font-size:20px;font-weight:600;margin-bottom:4px;}
 .auth-sub{font-size:13px;color:#888;margin-bottom:28px;}
-.field{margin-bottom:16px;}
-.field label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:500;}
-.field input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;color:#1a1a1a;outline:none;transition:border 0.15s;}
-.field input:focus{border-color:#7F77DD;}
+.afield{margin-bottom:16px;}
+.afield label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:500;}
+.afield input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;outline:none;}
+.afield input:focus{border-color:#7F77DD;}
 .btn-full{width:100%;padding:11px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:14px;font-weight:500;cursor:pointer;}
 .btn-full:hover{opacity:0.85;}
-.btn-full:disabled{opacity:0.5;cursor:not-allowed;}
 .auth-toggle{text-align:center;margin-top:18px;font-size:13px;color:#888;}
 .auth-toggle span{color:#7F77DD;cursor:pointer;font-weight:500;}
 .auth-err{font-size:13px;color:#A32D2D;margin-bottom:14px;padding:10px 12px;background:#FCEBEB;border-radius:8px;}
 .auth-info{font-size:13px;color:#0C447C;margin-bottom:14px;padding:10px 12px;background:#E6F1FB;border-radius:8px;}
+/* LAYOUT */
 .app{display:flex;height:100vh;}
-.sidebar{width:210px;min-width:210px;border-right:1px solid #e8e8e8;background:#fff;display:flex;flex-direction:column;}
-.logo{padding:20px 18px 16px;border-bottom:1px solid #f0f0f0;}
-.logo-text{font-size:16px;font-weight:600;color:#1a1a1a;}
+.sidebar{width:215px;min-width:215px;border-right:1px solid #e8e8e8;background:#fff;display:flex;flex-direction:column;overflow-y:auto;}
+.logo{padding:18px 16px 14px;border-bottom:1px solid #f0f0f0;}
+.logo-text{font-size:15px;font-weight:700;color:#1a1a1a;}
 .logo-sub{font-size:11px;color:#aaa;margin-top:2px;}
-.nav{padding:10px;flex:1;}
-.nav-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;cursor:pointer;font-size:13px;color:#666;margin-bottom:2px;transition:all 0.12s;}
+.nav-section{padding:8px 8px 0;margin-bottom:4px;}
+.nav-section-label{font-size:10px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:.08em;padding:6px 10px 4px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:#666;margin-bottom:1px;}
 .nav-item:hover{background:#f5f4f0;color:#1a1a1a;}
 .nav-item.active{background:#EEEDFE;color:#3C3489;font-weight:500;}
-.nav-item i{font-size:16px;}
-.sidebar-footer{padding:14px;border-top:1px solid #f0f0f0;}
-.user-info{font-size:11px;color:#aaa;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.btn-signout{width:100%;padding:7px;border-radius:8px;border:1px solid #e5e5e5;background:transparent;font-size:12px;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.nav-item i{font-size:15px;flex-shrink:0;}
+.sidebar-footer{padding:12px;border-top:1px solid #f0f0f0;margin-top:auto;}
+.user-badge{background:#f5f4f0;border-radius:8px;padding:8px 10px;margin-bottom:8px;}
+.user-email{font-size:11px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-role{font-size:10px;color:#7F77DD;font-weight:600;margin-top:2px;}
+.btn-signout{width:100%;padding:7px;border-radius:8px;border:1px solid #e5e5e5;background:transparent;font-size:12px;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;}
 .btn-signout:hover{background:#f5f4f0;}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #eee;background:#fff;}
-.topbar-title{font-size:16px;font-weight:600;color:#1a1a1a;}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#1a1a1a;transition:all 0.12s;font-family:inherit;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #eee;background:#fff;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:600;color:#1a1a1a;}
+.topbar-right{display:flex;gap:8px;align-items:center;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#1a1a1a;font-family:inherit;white-space:nowrap;}
 .btn:hover{background:#f5f4f0;}
 .btn-primary{background:#1a1a1a;color:#fff;border-color:transparent;}
 .btn-primary:hover{opacity:0.85;background:#1a1a1a;}
-.btn-danger{background:#fff;color:#A32D2D;border-color:#F09595;}
+.btn-danger{color:#A32D2D;border-color:#F09595;}
 .btn-danger:hover{background:#FCEBEB;}
+.btn-sm{padding:5px 10px;font-size:12px;}
 .content{flex:1;overflow-y:auto;padding:20px;background:#F5F4F0;}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-.stat{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eee;}
-.stat-label{font-size:11px;color:#aaa;margin-bottom:5px;font-weight:500;}
-.stat-val{font-size:24px;font-weight:600;color:#1a1a1a;}
-.table-wrap{background:#fff;border-radius:10px;border:1px solid #eee;overflow:hidden;}
-.section-label{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:left;font-size:11px;font-weight:600;color:#aaa;padding:10px 14px;border-bottom:1px solid #f0f0f0;background:#fafafa;text-transform:uppercase;letter-spacing:.04em;}
-td{padding:11px 14px;border-bottom:1px solid #f5f5f5;color:#1a1a1a;vertical-align:middle;}
+/* STATS */
+.stats-row{display:grid;gap:12px;margin-bottom:20px;}
+.stats-5{grid-template-columns:repeat(5,1fr);}
+.stats-4{grid-template-columns:repeat(4,1fr);}
+.stat-card{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eee;}
+.stat-label{font-size:11px;color:#aaa;margin-bottom:4px;font-weight:500;}
+.stat-val{font-size:22px;font-weight:700;color:#1a1a1a;line-height:1;}
+.stat-sub{font-size:11px;color:#aaa;margin-top:4px;}
+/* TABLE */
+.table-wrap{background:#fff;border-radius:10px;border:1px solid #eee;overflow:auto;}
+.section-label{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
+th{text-align:left;font-size:10px;font-weight:700;color:#aaa;padding:9px 12px;border-bottom:1px solid #f0f0f0;background:#fafafa;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;}
+td{padding:10px 12px;border-bottom:1px solid #f5f5f5;color:#1a1a1a;vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
 tr.clickable{cursor:pointer;}
 tr.clickable:hover td{background:#fafafa;}
-.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;}
-.badge-lead{background:#E6F1FB;color:#0C447C;}
-.badge-active{background:#EAF3DE;color:#27500A;}
-.badge-design{background:#EEEDFE;color:#3C3489;}
-.badge-done{background:#F1EFE8;color:#444441;}
-.badge-proposal{background:#FAEEDA;color:#633806;}
-.badge-sent{background:#FAEEDA;color:#633806;}
-.badge-accepted{background:#EAF3DE;color:#27500A;}
-.badge-draft{background:#F1EFE8;color:#444441;}
-.badge-high{background:#FAECE7;color:#712B13;}
-.badge-med{background:#FAEEDA;color:#633806;}
-.badge-low{background:#EAF3DE;color:#27500A;}
-.avatar{width:30px;height:30px;border-radius:50%;background:#EEEDFE;color:#3C3489;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;margin-right:10px;flex-shrink:0;}
-.client-cell{display:flex;align-items:center;}
-.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.pipe-col{background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:300px;}
-.pipe-header{font-size:12px;font-weight:600;color:#888;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
-.pipe-count{background:#f5f4f0;border-radius:99px;padding:2px 8px;font-size:11px;color:#888;}
-.pipe-card{background:#fafafa;border:1px solid #eee;border-radius:8px;padding:11px;}
-.pipe-card-name{font-size:13px;font-weight:500;color:#1a1a1a;margin-bottom:2px;}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b-hot{background:#FAECE7;color:#712B13;}
+.b-warm{background:#FAEEDA;color:#633806;}
+.b-cold{background:#E6F1FB;color:#0C447C;}
+.b-won{background:#EAF3DE;color:#27500A;}
+.b-dead{background:#F1EFE8;color:#555;}
+.b-lead{background:#E6F1FB;color:#0C447C;}
+.b-connected{background:#EAF3DE;color:#27500A;}
+.b-dnp{background:#FAEEDA;color:#633806;}
+.b-nr{background:#F1EFE8;color:#555;}
+.b-qualified{background:#EAF3DE;color:#27500A;}
+.b-notq{background:#FAECE7;color:#712B13;}
+.b-cb{background:#EEEDFE;color:#3C3489;}
+.b-quoted{background:#EAF3DE;color:#27500A;}
+.b-yet{background:#FAEEDA;color:#633806;}
+.b-default{background:#f0f0f0;color:#555;}
+/* AVATAR */
+.avatar{width:28px;height:28px;border-radius:50%;background:#EEEDFE;color:#3C3489;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.client-cell{display:flex;align-items:center;gap:8px;}
+/* PIPELINE */
+.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;height:100%;}
+.pipe-col{background:#fff;border:1px solid #eee;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;min-height:400px;}
+.pipe-header{font-size:11px;font-weight:700;color:#888;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;letter-spacing:.04em;}
+.pipe-count{background:#f5f4f0;border-radius:99px;padding:2px 7px;font-size:11px;color:#888;}
+.pipe-card{background:#fafafa;border:1px solid #eee;border-radius:8px;padding:10px;cursor:pointer;border-left:3px solid #ddd;}
+.pipe-card:hover{border-color:#bbb;}
+.pipe-card.hot{border-left-color:#D85A30;}
+.pipe-card.warm{border-left-color:#BA7517;}
+.pipe-card.cold{border-left-color:#378ADD;}
+.pipe-card.won{border-left-color:#1D9E75;}
+.pipe-card-name{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px;}
 .pipe-card-sub{font-size:11px;color:#aaa;}
-.pipe-card-val{font-size:12px;color:#666;margin-top:6px;font-weight:500;}
+.pipe-card-meta{font-size:11px;color:#888;margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;}
+/* NOTES */
 .note-item{padding:12px;border-radius:8px;border:1px solid #eee;margin-bottom:8px;background:#fff;}
 .note-meta{font-size:11px;color:#aaa;margin-bottom:4px;}
 .note-text{font-size:13px;color:#1a1a1a;line-height:1.5;}
 .empty{text-align:center;color:#bbb;font-size:13px;padding:48px 0;}
+/* FOLLOWUPS */
 .fu-item{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:8px;border:1px solid #eee;margin-bottom:8px;background:#fff;}
-.fu-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
-.dot-high{background:#D85A30;}.dot-med{background:#BA7517;}.dot-low{background:#639922;}
-.detail-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;background:#fff;padding:16px;border-radius:10px;border:1px solid #eee;}
-.detail-name{font-size:17px;font-weight:600;}
-.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
-.info-block{background:#fff;border-radius:8px;padding:12px;border:1px solid #eee;}
-.info-label{font-size:11px;color:#aaa;margin-bottom:3px;font-weight:500;}
+.fu-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.dot-High{background:#D85A30;}.dot-Medium{background:#BA7517;}.dot-Low{background:#639922;}
+/* DETAIL */
+.detail-header{background:#fff;padding:16px;border-radius:10px;border:1px solid #eee;margin-bottom:14px;}
+.detail-name{font-size:18px;font-weight:700;}
+.detail-meta{font-size:12px;color:#aaa;margin-top:3px;}
+.field-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.info-block{background:#fff;border-radius:8px;padding:11px 13px;border:1px solid #eee;}
+.info-label{font-size:10px;color:#aaa;margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
 .info-val{font-size:13px;color:#1a1a1a;font-weight:500;}
-.tabs{display:flex;border-bottom:1px solid #eee;margin-bottom:16px;}
-.tab{padding:9px 16px;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
-.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500;}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:100;}
-.modal{background:#fff;border-radius:16px;border:1px solid #eee;padding:24px;width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.12);}
-.modal-title{font-size:16px;font-weight:600;color:#1a1a1a;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;}
-.mfield{margin-bottom:14px;}
-.mfield label{display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:500;}
-.mfield input,.mfield select,.mfield textarea{width:100%;padding:9px 11px;border-radius:8px;border:1px solid #ddd;font-size:13px;color:#1a1a1a;font-family:inherit;outline:none;transition:border 0.12s;}
+.tabs{display:flex;border-bottom:1px solid #eee;margin-bottom:14px;background:#fff;border-radius:10px 10px 0 0;padding:0 4px;}
+.tab{padding:10px 14px;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:600;}
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100;}
+.modal{background:#fff;border-radius:16px;padding:24px;width:680px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,0.16);}
+.modal-title{font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.modal-sub{font-size:12px;color:#aaa;margin-bottom:20px;}
+.form-section{margin-bottom:20px;}
+.form-section-title{font-size:11px;font-weight:700;color:#7F77DD;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #EEEDFE;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.mfield{margin-bottom:0;}
+.mfield label{display:block;font-size:11px;color:#555;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+.mfield input,.mfield select,.mfield textarea{width:100%;padding:8px 11px;border-radius:8px;border:1px solid #ddd;font-size:13px;color:#1a1a1a;font-family:inherit;outline:none;}
 .mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:#7F77DD;}
-.mfield textarea{resize:vertical;min-height:70px;}
-.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:1px solid #f0f0f0;}
-.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:200;transition:opacity 0.3s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
-
+.mfield textarea{resize:vertical;min-height:65px;}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #f0f0f0;}
+/* MULTI SELECT */
+.multi-select{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid #ddd;border-radius:8px;min-height:44px;}
+.ms-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#f5f5f5;color:#555;transition:all .12s;}
+.ms-chip.selected{background:#EEEDFE;color:#3C3489;border-color:#C5C2F6;}
 /* SETTINGS */
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.settings-card{background:#fff;border-radius:12px;border:1px solid #eee;padding:20px;}
-.settings-card-title{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
-.settings-card-sub{font-size:12px;color:#aaa;margin-bottom:16px;}
-.field-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;}
-.field-toggle:last-child{border-bottom:none;}
-.field-toggle-info{flex:1;}
-.field-toggle-name{font-size:13px;font-weight:500;color:#1a1a1a;}
-.field-toggle-desc{font-size:11px;color:#aaa;margin-top:1px;}
+.settings-layout{display:grid;grid-template-columns:200px 1fr;gap:16px;}
+.settings-nav{background:#fff;border-radius:10px;border:1px solid #eee;padding:8px;height:fit-content;}
+.settings-nav-item{padding:8px 12px;border-radius:8px;font-size:13px;color:#666;cursor:pointer;margin-bottom:2px;}
+.settings-nav-item:hover{background:#f5f4f0;}
+.settings-nav-item.active{background:#EEEDFE;color:#3C3489;font-weight:500;}
+.settings-panel{background:#fff;border-radius:10px;border:1px solid #eee;padding:20px;}
+.settings-panel-title{font-size:15px;font-weight:700;margin-bottom:4px;}
+.settings-panel-sub{font-size:12px;color:#aaa;margin-bottom:20px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-info{flex:1;}
+.toggle-name{font-size:13px;font-weight:500;color:#1a1a1a;}
+.toggle-desc{font-size:11px;color:#aaa;margin-top:1px;}
 .toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
-.toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:#ddd;border-radius:20px;cursor:pointer;transition:0.2s;}
-.toggle-slider:before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.2s;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{position:absolute;inset:0;background:#ddd;border-radius:20px;cursor:pointer;transition:.2s;}
+.toggle-slider:before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
 .toggle input:checked+.toggle-slider{background:#7F77DD;}
 .toggle input:checked+.toggle-slider:before{transform:translateX(16px);}
-.settings-save-bar{background:#fff;border:1px solid #eee;border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-.settings-save-info{font-size:13px;color:#666;}
+/* DASHBOARD */
+.dash-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.dash-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-card{background:#fff;border-radius:10px;border:1px solid #eee;padding:16px;}
+.chart-title{font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:14px;}
+.funnel-bar{margin-bottom:8px;}
+.funnel-label{display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:3px;}
+.funnel-track{background:#f0f0f0;border-radius:99px;height:10px;overflow:hidden;}
+.funnel-fill{height:100%;border-radius:99px;transition:width .4s;}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:200;transition:opacity .3s;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.group-card{border:1px solid #eee;border-radius:10px;padding:16px;margin-bottom:12px;}
+.group-title{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:4px;}
+.group-sub{font-size:12px;color:#aaa;margin-bottom:14px;}
+.group-fields{display:flex;flex-wrap:wrap;gap:6px;}
+.group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#f5f5f5;color:#555;}
+.group-chip.on{background:#EAF3DE;color:#27500A;border-color:#97C459;}
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.filter-select{padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;color:#1a1a1a;font-family:inherit;outline:none;}
 </style>
 </head>
 <body>
-
 <div id="auth-screen" class="auth-wrap">
   <div class="auth-card">
     <div class="auth-logo">Studio CRM</div>
-    <div class="auth-sub" id="auth-sub">Spacioworks · Sign in to continue</div>
+    <div class="auth-sub" id="auth-sub">Spacioworks · Sign in</div>
     <div id="auth-err" class="auth-err hidden"></div>
     <div id="auth-info" class="auth-info hidden"></div>
-    <div class="field"><label>Email</label><input id="auth-email" type="email" placeholder="you@spacioworks.in"></div>
-    <div class="field"><label>Password</label><input id="auth-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()"></div>
+    <div class="afield"><label>Email</label><input id="auth-email" type="email" placeholder="you@spacioworks.in"></div>
+    <div class="afield"><label>Password</label><input id="auth-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()"></div>
     <button class="btn-full" id="auth-btn" onclick="handleAuth()">Sign in</button>
     <div class="auth-toggle" id="auth-toggle">No account? <span onclick="toggleAuthMode()">Create one</span></div>
   </div>
@@ -147,117 +202,136 @@ tr.clickable:hover td{background:#fafafa;}
 
 <div id="app-screen" class="app hidden">
   <div class="sidebar">
-    <div class="logo"><div class="logo-text">Studio CRM</div><div class="logo-sub">Spacioworks</div></div>
-    <div class="nav">
-      <div class="nav-item active" data-view="clients" onclick="switchView('clients')"><i class="ti ti-users"></i> Clients</div>
+    <div class="logo"><div class="logo-text">Studio CRM</div><div class="logo-sub">Spacioworks Interior</div></div>
+    <div class="nav-section">
+      <div class="nav-section-label">Main</div>
+      <div class="nav-item active" data-view="dashboard" onclick="switchView('dashboard')"><i class="ti ti-dashboard"></i> Dashboard</div>
+      <div class="nav-item" data-view="leads" onclick="switchView('leads')"><i class="ti ti-users"></i> Leads</div>
       <div class="nav-item" data-view="pipeline" onclick="switchView('pipeline')"><i class="ti ti-layout-kanban"></i> Pipeline</div>
-      <div class="nav-item" data-view="quotes" onclick="switchView('quotes')"><i class="ti ti-receipt"></i> Quotes</div>
-      <div class="nav-item" data-view="followups" onclick="switchView('followups')"><i class="ti ti-bell"></i> Follow-ups</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Teams</div>
+      <div class="nav-item" data-view="calling" onclick="switchView('calling')"><i class="ti ti-phone"></i> Calling Team</div>
+      <div class="nav-item" data-view="sales" onclick="switchView('sales')"><i class="ti ti-building"></i> Sales & Architect</div>
+      <div class="nav-item" data-view="design" onclick="switchView('design')"><i class="ti ti-pencil"></i> Design Team</div>
+      <div class="nav-item" data-view="project" onclick="switchView('project')"><i class="ti ti-hammer"></i> Project Mgmt</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Admin</div>
       <div class="nav-item" data-view="settings" onclick="switchView('settings')"><i class="ti ti-settings"></i> Settings</div>
     </div>
     <div class="sidebar-footer">
-      <div class="user-info" id="user-email-display"></div>
+      <div class="user-badge">
+        <div class="user-email" id="user-email-display"></div>
+        <div class="user-role" id="user-role-display">Admin</div>
+      </div>
       <button class="btn-signout" onclick="signOut()"><i class="ti ti-logout"></i> Sign out</button>
     </div>
   </div>
 
   <div class="main">
+    <!-- DASHBOARD -->
+    <div id="view-dashboard">
+      <div class="topbar"><span class="topbar-title">Dashboard</span><div class="topbar-right"><select class="filter-select" id="dash-period" onchange="renderDashboard()"><option value="30">Last 30 days</option><option value="7">Last 7 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select></div></div>
+      <div class="content" id="dashboard-content"></div>
+    </div>
 
-    <!-- CLIENTS -->
-    <div id="view-clients">
+    <!-- LEADS -->
+    <div id="view-leads" class="hidden">
       <div class="topbar">
-        <span class="topbar-title">Clients</span>
-        <div style="display:flex;gap:8px;">
-          <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Export CSV</button>
-          <button class="btn btn-primary" onclick="openModal('add-client')"><i class="ti ti-plus"></i> Add client</button>
+        <span class="topbar-title">All Leads</span>
+        <div class="topbar-right">
+          <select class="filter-select" id="filter-status" onchange="renderLeads()"><option value="">All statuses</option><option>Hot</option><option>Warm</option><option>Cold</option><option>Won</option><option>Dead</option></select>
+          <select class="filter-select" id="filter-city" onchange="renderLeads()"><option value="">All cities</option></select>
+          <select class="filter-select" id="filter-source" onchange="renderLeads()"><option value="">All sources</option><option>Meta Ad</option><option>Referral</option></select>
+          <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Export</button>
+          <button class="btn btn-primary" onclick="openAddLead()"><i class="ti ti-plus"></i> Add lead</button>
         </div>
       </div>
       <div class="content">
-        <div class="stats" id="client-stats"></div>
-        <div class="section-label">All clients</div>
-        <div class="table-wrap"><table><thead><tr id="clients-thead"></tr></thead><tbody id="clients-table"></tbody></table></div>
+        <div id="leads-table-wrap" class="table-wrap"><table><thead><tr id="leads-thead"></tr></thead><tbody id="leads-tbody"></tbody></table></div>
       </div>
     </div>
 
-    <!-- CLIENT DETAIL -->
-    <div id="view-client-detail" class="hidden">
+    <!-- LEAD DETAIL -->
+    <div id="view-lead-detail" class="hidden">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#888;font-size:13px;" onclick="switchView('clients')"><i class="ti ti-arrow-left"></i> Back to clients</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn" onclick="openEditClient()"><i class="ti ti-edit"></i> Edit</button>
-          <button class="btn btn-danger" onclick="deleteClient()"><i class="ti ti-trash"></i> Delete</button>
-          <button class="btn btn-primary" onclick="openModal('add-note')"><i class="ti ti-plus"></i> Add note</button>
+        <div style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#888;" onclick="switchView('leads')"><i class="ti ti-arrow-left"></i> Back to leads</div>
+        <div class="topbar-right">
+          <button class="btn" onclick="openEditLead()"><i class="ti ti-edit"></i> Edit</button>
+          <button class="btn btn-danger" onclick="deleteLead()"><i class="ti ti-trash"></i> Delete</button>
+          <button class="btn btn-primary" onclick="openModal('add-note')"><i class="ti ti-message"></i> Add note</button>
         </div>
       </div>
-      <div class="content" id="client-detail-content"></div>
+      <div class="content" id="lead-detail-content"></div>
     </div>
 
     <!-- PIPELINE -->
     <div id="view-pipeline" class="hidden">
-      <div class="topbar"><span class="topbar-title">Project pipeline</span><button class="btn btn-primary" onclick="openModal('add-project')"><i class="ti ti-plus"></i> Add project</button></div>
+      <div class="topbar"><span class="topbar-title">Pipeline</span></div>
       <div class="content"><div class="pipeline" id="pipeline-board"></div></div>
     </div>
 
-    <!-- QUOTES -->
-    <div id="view-quotes" class="hidden">
-      <div class="topbar"><span class="topbar-title">Quotes & invoices</span><button class="btn btn-primary" onclick="openModal('add-quote')"><i class="ti ti-plus"></i> New quote</button></div>
-      <div class="content"><div class="table-wrap"><table><thead><tr><th>Quote #</th><th>Client</th><th>Description</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody id="quotes-table"></tbody></table></div></div>
+    <!-- TEAM VIEWS -->
+    <div id="view-calling" class="hidden">
+      <div class="topbar"><span class="topbar-title"><i class="ti ti-phone" style="margin-right:6px;"></i>Calling Team View</span><div class="topbar-right"><button class="btn btn-primary" onclick="openAddLead()"><i class="ti ti-plus"></i> Add lead</button></div></div>
+      <div class="content" id="calling-content"></div>
     </div>
-
-    <!-- FOLLOWUPS -->
-    <div id="view-followups" class="hidden">
-      <div class="topbar"><span class="topbar-title">Follow-ups & reminders</span><button class="btn btn-primary" onclick="openModal('add-followup')"><i class="ti ti-plus"></i> Add reminder</button></div>
-      <div class="content" id="followups-content"></div>
+    <div id="view-sales" class="hidden">
+      <div class="topbar"><span class="topbar-title"><i class="ti ti-building" style="margin-right:6px;"></i>Sales & Architect View</span></div>
+      <div class="content" id="sales-content"></div>
+    </div>
+    <div id="view-design" class="hidden">
+      <div class="topbar"><span class="topbar-title"><i class="ti ti-pencil" style="margin-right:6px;"></i>Design Team View</span></div>
+      <div class="content" id="design-content"></div>
+    </div>
+    <div id="view-project" class="hidden">
+      <div class="topbar"><span class="topbar-title"><i class="ti ti-hammer" style="margin-right:6px;"></i>Project Management View</span></div>
+      <div class="content" id="project-content"></div>
     </div>
 
     <!-- SETTINGS -->
     <div id="view-settings" class="hidden">
-      <div class="topbar"><span class="topbar-title">Settings</span></div>
-      <div class="content" id="settings-content"></div>
+      <div class="topbar"><span class="topbar-title">Settings</span><div class="topbar-right"><button class="btn btn-primary" onclick="saveSettings()"><i class="ti ti-check"></i> Save all settings</button></div></div>
+      <div class="content">
+        <div class="settings-layout">
+          <div class="settings-nav">
+            <div class="settings-nav-item active" onclick="showSettingsPanel('fields')">Field visibility</div>
+            <div class="settings-nav-item" onclick="showSettingsPanel('groups')">Team groups</div>
+          </div>
+          <div id="settings-panel-fields" class="settings-panel">
+            <div class="settings-panel-title">Field visibility</div>
+            <div class="settings-panel-sub">Toggle which fields appear in the Add/Edit lead form</div>
+            <div id="field-toggles"></div>
+          </div>
+          <div id="settings-panel-groups" class="settings-panel hidden">
+            <div class="settings-panel-title">Team group fields</div>
+            <div class="settings-panel-sub">Choose which fields each team sees and can update</div>
+            <div id="group-settings"></div>
+          </div>
+        </div>
+      </div>
     </div>
-
   </div>
 </div>
 
 <!-- MODALS -->
 <div class="modal-bg hidden" id="modal-overlay" onclick="closeMO(event)">
-  <div class="modal hidden" id="modal-add-client">
-    <div class="modal-title">New client <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
-    <div id="client-form-fields"></div>
-    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="saveClient()">Add client</button></div>
+  <div class="modal hidden" id="modal-add-lead">
+    <div class="modal-title">New lead <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="modal-sub">Fill in the lead details</div>
+    <div id="lead-form-body"></div>
+    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="saveLead()">Save lead</button></div>
   </div>
-  <div class="modal hidden" id="modal-edit-client">
-    <div class="modal-title">Edit client <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
-    <div id="client-edit-fields"></div>
-    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="updateClient()">Save changes</button></div>
-  </div>
-  <div class="modal hidden" id="modal-add-project">
-    <div class="modal-title">New project <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
-    <div class="mfield"><label>Project name *</label><input id="p-name" placeholder="e.g. Master Bedroom Redesign"></div>
-    <div class="mfield"><label>Client</label><select id="p-client"></select></div>
-    <div class="mfield"><label>Stage</label><select id="p-stage"><option>Lead</option><option>Proposal</option><option>In design</option><option>Done</option></select></div>
-    <div class="mfield"><label>Value</label><input id="p-value" placeholder="e.g. ₹8,00,000"></div>
-    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addProject()">Add project</button></div>
-  </div>
-  <div class="modal hidden" id="modal-add-quote">
-    <div class="modal-title">New quote <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
-    <div class="mfield"><label>Client</label><select id="q-client"></select></div>
-    <div class="mfield"><label>Description</label><input id="q-desc" placeholder="e.g. Living room package"></div>
-    <div class="mfield"><label>Amount (₹)</label><input id="q-amount" type="number"></div>
-    <div class="mfield"><label>Status</label><select id="q-status"><option>Draft</option><option>Sent</option><option>Accepted</option></select></div>
-    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addQuote()">Save quote</button></div>
-  </div>
-  <div class="modal hidden" id="modal-add-followup">
-    <div class="modal-title">New reminder <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
-    <div class="mfield"><label>Client</label><select id="f-client"></select></div>
-    <div class="mfield"><label>Note</label><textarea id="f-note" placeholder="e.g. Follow up on material samples..."></textarea></div>
-    <div class="mfield"><label>Due date</label><input id="f-date" type="date"></div>
-    <div class="mfield"><label>Priority</label><select id="f-priority"><option>Low</option><option>Medium</option><option>High</option></select></div>
-    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addFollowup()">Save</button></div>
+  <div class="modal hidden" id="modal-edit-lead">
+    <div class="modal-title">Edit lead <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="modal-sub" id="edit-lead-sub"></div>
+    <div id="lead-edit-body"></div>
+    <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="updateLead()">Save changes</button></div>
   </div>
   <div class="modal hidden" id="modal-add-note">
-    <div class="modal-title">Add note <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span></div>
-    <div class="mfield"><label>Note</label><textarea id="n-text" placeholder="Meeting notes, preferences, decisions..."></textarea></div>
+    <div class="modal-title">Add note <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="mfield" style="margin-top:8px;"><label>Note</label><textarea id="n-text" placeholder="Meeting notes, call summary, decisions..." style="min-height:100px;"></textarea></div>
     <div class="modal-footer"><button class="btn" onclick="closeAllModals()">Cancel</button><button class="btn btn-primary" onclick="addNote()">Save note</button></div>
   </div>
 </div>
@@ -267,345 +341,558 @@ const SUPA_URL='https://vfucyxwmmetymmznbqsh.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmdWN5eHdtbWV0eW1tem5icXNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjI0NzksImV4cCI6MjA5NTczODQ3OX0.dcrCbW_3h1sSEw25KqL3W7OU6Nq3KVm7Rclp9CctAMs';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 
-// ALL POSSIBLE CLIENT FIELDS
-const ALL_FIELDS=[
-  {key:'name',label:'Full name',type:'text',placeholder:'e.g. Sarah Mitchell',required:true,default:true,locked:true},
-  {key:'email',label:'Email',type:'email',placeholder:'client@email.com',default:true},
-  {key:'phone',label:'Phone',type:'text',placeholder:'+91 98765 43210',default:true},
-  {key:'whatsapp',label:'WhatsApp number',type:'text',placeholder:'+91 98765 43210',default:false},
-  {key:'type',label:'Client type',type:'select',options:['Residential','Commercial','Hospitality','Retail'],default:true},
-  {key:'status',label:'Status',type:'select',options:['Lead','Active','In design','Done'],default:true,locked:true},
-  {key:'budget',label:'Budget',type:'text',placeholder:'e.g. ₹15,00,000',default:true},
-  {key:'city',label:'City / Location',type:'text',placeholder:'e.g. Mumbai',default:false},
-  {key:'property_size',label:'Property size (sq ft)',type:'text',placeholder:'e.g. 1200',default:false},
-  {key:'project_type',label:'Project type',type:'select',options:['Full interior','Modular kitchen','False ceiling','Wardrobe','Living room','Bedroom','Bathroom','Office'],default:false},
-  {key:'source',label:'How did they find you',type:'select',options:['Referral','Instagram','Website','Google','Walk-in','WhatsApp','Other'],default:false},
-  {key:'timeline',label:'Expected start date',type:'date',default:false},
-  {key:'alternate_phone',label:'Alternate phone',type:'text',placeholder:'+91 98765 43210',default:false},
-  {key:'address',label:'Full address',type:'textarea',placeholder:'Street, Area, City',default:false},
-  {key:'notes',label:'Initial notes',type:'textarea',placeholder:'Any details from first conversation...',default:false},
+// ── ALL FIELDS DEFINITION ──────────────────────────────────────────────────
+const SECTIONS=[
+  {title:'Lead Info',fields:[
+    {key:'lead_id',label:'Lead ID',type:'text',placeholder:'Auto or manual ID'},
+    {key:'created_time',label:'Created Time',type:'datetime-local'},
+    {key:'ad_id',label:'Ad ID',type:'text'},
+    {key:'ad_name',label:'Ad Name',type:'text'},
+    {key:'adset_id',label:'Adset ID',type:'text'},
+    {key:'adset_name',label:'Adset Name',type:'text'},
+    {key:'campaign_id',label:'Campaign ID',type:'text'},
+    {key:'campaign_name',label:'Campaign Name',type:'text'},
+    {key:'form_id',label:'Form ID',type:'text'},
+    {key:'form_name',label:'Form Name',type:'text'},
+    {key:'is_organic',label:'Is Organic',type:'select',options:['','Yes','No']},
+    {key:'lead_source',label:'Lead Source',type:'select',options:['','Meta Ad','Referral']},
+  ]},
+  {title:'Property Details',fields:[
+    {key:'property_type',label:'Property Type',type:'select',options:['','Residential','Commercial']},
+    {key:'property_segment',label:'Property Segment',type:'select',options:['','Apartment','Villa','Individual House','Bungalow']},
+    {key:'property_specification',label:'Property Specification',type:'select',options:['','2BHK','3BHK','4BHK','5BHK','5BHK+']},
+    {key:'city',label:'City',type:'select',options:['','Chennai','Kanchipuram','Chengalpattu','Tiruvallur','Trichy','Salem','Madurai','Coimbatore','Krishnagiri','Nagarkovil','Kanyakumari','Bangalore','Hyderabad','Mumbai','Delhi']},
+    {key:'builder_name',label:'Builder Name',type:'text'},
+    {key:'project_name',label:'Project Name',type:'text'},
+    {key:'unit_street',label:'Unit & Street',type:'text'},
+    {key:'location_area',label:'Location/Area',type:'text'},
+    {key:'pincode',label:'Pincode',type:'text'},
+    {key:'interior_budget',label:'Interior Budget',type:'text',placeholder:'e.g. ₹15,00,000'},
+    {key:'expected_handover_date',label:'Expected Handover Date',type:'date'},
+  ]},
+  {title:'Contact Info',fields:[
+    {key:'name',label:'Name',type:'text',required:true},
+    {key:'email',label:'Email ID',type:'email'},
+    {key:'phone',label:'Phone',type:'text'},
+    {key:'whatsapp',label:'WhatsApp Number',type:'text'},
+  ]},
+  {title:'Calling Team',fields:[
+    {key:'first_call_date',label:'First Call Date',type:'date'},
+    {key:'recent_call_date',label:'Recent Call Date',type:'date'},
+    {key:'call_status',label:'Call Status',type:'select',options:['','Connected','DNP1','DNP2','DNP3','DNP>3','Not Reachable','Invalid Number','Incorrect Number','Fake Lead']},
+    {key:'connected_call_status',label:'Connected Call Status',type:'select',options:['','Lead Qualified','Lead Not Qualified','Call Back']},
+    {key:'final_lead_status',label:'Final Lead Status',type:'select',options:['','Cold','Warm','Hot','Won','Dead']},
+  ]},
+  {title:'Sales & Architect Team',fields:[
+    {key:'architect_call_date',label:'Architect Call Date',type:'date'},
+    {key:'architect_call_status',label:'Architect Call Status',type:'select',options:['','Requirement Collected','Not Connected']},
+    {key:'requirements',label:'Requirements',type:'multiselect',options:['Foyer','TV Unit','Sofa wall','False Ceiling','Crockery Unit','Pooja Unit','Wardrobes','Vanity Unit','Others']},
+    {key:'requirement_comment',label:'Requirement Comment',type:'textarea'},
+    {key:'quote_status',label:'Quote Status',type:'select',options:['','Yet to Prepare','Quoted']},
+  ]},
+  {title:'General',fields:[
+    {key:'comments',label:'Comments',type:'textarea'},
+  ]},
 ];
 
-let state={view:'clients',selectedClient:null,selectedClientTab:'notes',clients:[],projects:[],quotes:[],followups:[],dbNotes:[],fieldSettings:{}};
+const ALL_FIELDS=SECTIONS.flatMap(s=>s.fields);
+
+// Team group default field assignments
+const DEFAULT_GROUPS={
+  calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','comments'],
+  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','architect_call_date','architect_call_status','requirements','requirement_comment','quote_status','final_lead_status','comments'],
+  design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','comments'],
+  project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','final_lead_status','comments'],
+};
+
+let state={view:'dashboard',selectedLead:null,selectedTab:'notes',leads:[],notes:[],fieldVisible:{},groupFields:{...DEFAULT_GROUPS},charts:{}};
 let authMode='signin';
 
-function loadFieldSettings(){
+function loadSettings(){
   try{
-    const saved=localStorage.getItem('crm_field_settings');
-    if(saved){ state.fieldSettings=JSON.parse(saved); }
-    else{
-      ALL_FIELDS.forEach(f=>{ state.fieldSettings[f.key]=f.default; });
-      saveFieldSettings();
-    }
-  }catch(e){
-    ALL_FIELDS.forEach(f=>{ state.fieldSettings[f.key]=f.default; });
-  }
+    const fv=localStorage.getItem('crm_fv');
+    if(fv)state.fieldVisible=JSON.parse(fv);
+    else{ALL_FIELDS.forEach(f=>{state.fieldVisible[f.key]=true;});saveSettings();}
+    const gf=localStorage.getItem('crm_gf');
+    if(gf)state.groupFields=JSON.parse(gf);
+  }catch(e){ALL_FIELDS.forEach(f=>{state.fieldVisible[f.key]=true;});}
 }
-function saveFieldSettings(){ localStorage.setItem('crm_field_settings',JSON.stringify(state.fieldSettings)); }
-function isFieldEnabled(key){ return state.fieldSettings[key]===true||state.fieldSettings[key]===undefined; }
+function saveSettings(){
+  localStorage.setItem('crm_fv',JSON.stringify(state.fieldVisible));
+  localStorage.setItem('crm_gf',JSON.stringify(state.groupFields));
+}
 
 async function init(){
-  loadFieldSettings();
+  loadSettings();
   const{data:{session}}=await sb.auth.getSession();
-  if(session){showApp(session.user);}else{showAuth();}
-  sb.auth.onAuthStateChange((_e,session)=>{if(session){showApp(session.user);}else{showAuth();}});
+  if(session)showApp(session.user); else showAuth();
+  sb.auth.onAuthStateChange((_,s)=>{if(s)showApp(s.user);else showAuth();});
 }
 
 function showAuth(){document.getElementById('auth-screen').classList.remove('hidden');document.getElementById('app-screen').classList.add('hidden');}
-function showApp(user){document.getElementById('auth-screen').classList.add('hidden');document.getElementById('app-screen').classList.remove('hidden');document.getElementById('user-email-display').textContent=user.email;loadAll();}
+function showApp(u){document.getElementById('auth-screen').classList.add('hidden');document.getElementById('app-screen').classList.remove('hidden');document.getElementById('user-email-display').textContent=u.email;loadAll();}
 
 function toggleAuthMode(){
   authMode=authMode==='signin'?'signup':'signin';
   document.getElementById('auth-btn').textContent=authMode==='signin'?'Sign in':'Create account';
-  document.getElementById('auth-sub').textContent=authMode==='signin'?'Spacioworks · Sign in to continue':'Spacioworks · Create your account';
+  document.getElementById('auth-sub').textContent=authMode==='signin'?'Spacioworks · Sign in':'Spacioworks · Create account';
   document.getElementById('auth-toggle').innerHTML=authMode==='signin'?'No account? <span onclick="toggleAuthMode()">Create one</span>':'Have an account? <span onclick="toggleAuthMode()">Sign in</span>';
-  document.getElementById('auth-err').classList.add('hidden');
-  document.getElementById('auth-info').classList.add('hidden');
+  ['auth-err','auth-info'].forEach(id=>document.getElementById(id).classList.add('hidden'));
 }
 
 async function handleAuth(){
   const email=document.getElementById('auth-email').value.trim();
   const pass=document.getElementById('auth-pass').value;
-  document.getElementById('auth-err').classList.add('hidden');
-  document.getElementById('auth-info').classList.add('hidden');
-  if(!email||!pass){showErr('Please enter your email and password.');return;}
-  if(pass.length<6){showErr('Password must be at least 6 characters.');return;}
-  const btn=document.getElementById('auth-btn');
-  btn.textContent='Please wait...';btn.disabled=true;
+  ['auth-err','auth-info'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  if(!email||!pass){showAuthMsg('err','Please enter email and password.');return;}
+  if(pass.length<6){showAuthMsg('err','Password needs 6+ characters.');return;}
+  const btn=document.getElementById('auth-btn');btn.textContent='Please wait...';btn.disabled=true;
   try{
-    let res;
-    if(authMode==='signin'){res=await sb.auth.signInWithPassword({email,password:pass});}
-    else{res=await sb.auth.signUp({email,password:pass});}
-    if(res.error){showErr(res.error.message);}
-    else if(authMode==='signup'&&!res.data?.session){showInfo('Account created! Check your email to confirm, then sign in.');}
-  }catch(e){showErr('Error: '+e.message);}
+    const res=authMode==='signin'?await sb.auth.signInWithPassword({email,password:pass}):await sb.auth.signUp({email,password:pass});
+    if(res.error)showAuthMsg('err',res.error.message);
+    else if(authMode==='signup'&&!res.data?.session)showAuthMsg('info','Check your email to confirm, then sign in.');
+  }catch(e){showAuthMsg('err','Error: '+e.message);}
   btn.textContent=authMode==='signin'?'Sign in':'Create account';btn.disabled=false;
 }
-
-function showErr(msg){const e=document.getElementById('auth-err');e.textContent=msg;e.classList.remove('hidden');}
-function showInfo(msg){const e=document.getElementById('auth-info');e.textContent=msg;e.classList.remove('hidden');}
+function showAuthMsg(type,msg){const e=document.getElementById('auth-'+type);e.textContent=msg;e.classList.remove('hidden');}
 async function signOut(){await sb.auth.signOut();}
 
 async function loadAll(){
-  const[c,p,q,f,n]=await Promise.all([
-    sb.from('clients').select('*').order('created_at',{ascending:false}),
-    sb.from('projects').select('*').order('created_at',{ascending:false}),
-    sb.from('quotes').select('*').order('created_at',{ascending:false}),
-    sb.from('followups').select('*').order('due_date',{ascending:true}),
-    sb.from('client_notes').select('*').order('created_at',{ascending:false}),
+  const[l,n]=await Promise.all([
+    sb.from('leads').select('*').order('created_at',{ascending:false}),
+    sb.from('lead_notes').select('*').order('created_at',{ascending:false}),
   ]);
-  state.clients=c.data||[];state.projects=p.data||[];state.quotes=q.data||[];state.followups=f.data||[];state.dbNotes=n.data||[];
+  state.leads=l.data||[];state.notes=n.data||[];
+  populateCityFilter();
   renderCurrent();
+}
+
+function populateCityFilter(){
+  const cities=[...new Set(state.leads.map(l=>l.city).filter(Boolean))].sort();
+  const sel=document.getElementById('filter-city');
+  if(sel){const cur=sel.value;sel.innerHTML='<option value="">All cities</option>'+cities.map(c=>`<option${c===cur?' selected':''}>${c}</option>`).join('');}
 }
 
 function renderCurrent(){
   const v=state.view;
-  if(v==='clients')renderClients();
+  if(v==='dashboard')renderDashboard();
+  else if(v==='leads')renderLeads();
+  else if(v==='lead-detail')renderLeadDetail();
   else if(v==='pipeline')renderPipeline();
-  else if(v==='quotes')renderQuotes();
-  else if(v==='followups')renderFollowups();
-  else if(v==='client-detail')renderClientDetail();
-  else if(v==='settings')renderSettings();
+  else if(v==='calling')renderTeamView('calling','Calling Team');
+  else if(v==='sales')renderTeamView('sales','Sales & Architect');
+  else if(v==='design')renderTeamView('design','Design Team');
+  else if(v==='project')renderTeamView('project','Project Management');
+  else if(v==='settings')renderSettingsPage();
 }
 
 function switchView(v){
   state.view=v;
-  ['clients','pipeline','quotes','followups','client-detail','settings'].forEach(id=>{document.getElementById('view-'+id).classList.add('hidden');});
+  document.querySelectorAll('[id^="view-"]').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-'+v).classList.remove('hidden');
-  document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.view===v);});
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===v));
   renderCurrent();
 }
 
-function statusBadge(s){const map={Lead:'badge-lead',Active:'badge-active','In design':'badge-design',Done:'badge-done',Proposal:'badge-proposal',Sent:'badge-sent',Accepted:'badge-accepted',Draft:'badge-draft'};return`<span class="badge ${map[s]||'badge-draft'}">${s||'—'}</span>`;}
-function initials(name){return(name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
-function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-IN',{month:'short',day:'numeric',year:'numeric'});}catch(e){return d;}}
+// ── BADGES ────────────────────────────────────────────────────────────────
+function statusBadge(val,field){
+  if(!val)return'<span style="color:#ccc;">—</span>';
+  const maps={
+    final_lead_status:{Hot:'b-hot',Warm:'b-warm',Cold:'b-cold',Won:'b-won',Dead:'b-dead'},
+    call_status:{Connected:'b-connected',DNP1:'b-dnp',DNP2:'b-dnp','DNP3':'b-dnp','DNP>3':'b-dnp','Not Reachable':'b-nr','Invalid Number':'b-nr','Incorrect Number':'b-nr','Fake Lead':'b-dead'},
+    connected_call_status:{'Lead Qualified':'b-qualified','Lead Not Qualified':'b-notq','Call Back':'b-cb'},
+    quote_status:{'Quoted':'b-quoted','Yet to Prepare':'b-yet'},
+  };
+  const cls=(maps[field]&&maps[field][val])||'b-default';
+  return`<span class="badge ${cls}">${val}</span>`;
+}
+function initials(n){return(n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}catch(e){return d;}}
+function fmtVal(l,key){
+  const f=ALL_FIELDS.find(x=>x.key===key);if(!f)return l[key]||'—';
+  if(f.type==='multiselect')return(l[key]||[]).join(', ')||'—';
+  if(f.type==='date'||f.type==='datetime-local')return fmtDate(l[key]);
+  if(['final_lead_status','call_status','connected_call_status','quote_status'].includes(key))return statusBadge(l[key],key);
+  return l[key]||'—';
+}
 
-// BUILD CLIENT FORM
-function buildClientForm(containerId,existingData={}){
-  const el=document.getElementById(containerId);
-  el.innerHTML=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)).map(f=>{
-    const val=existingData[f.key]||'';
-    let input='';
-    if(f.type==='select'){
-      input=`<select id="cf-${f.key}"><option value="">Select...</option>${f.options.map(o=>`<option value="${o}"${val===o?' selected':''}>${o}</option>`).join('')}</select>`;
-    }else if(f.type==='textarea'){
-      input=`<textarea id="cf-${f.key}" placeholder="${f.placeholder||''}">${val}</textarea>`;
-    }else{
-      input=`<input id="cf-${f.key}" type="${f.type}" placeholder="${f.placeholder||''}" value="${val}">`;
-    }
-    return`<div class="mfield"><label>${f.label}${f.required?' *':''}</label>${input}</div>`;
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const period=parseInt(document.getElementById('dash-period')?.value)||30;
+  const now=new Date();
+  const leads=state.leads.filter(l=>{
+    if(period==='all'||isNaN(period))return true;
+    const d=new Date(l.created_at);
+    return(now-d)/(1000*60*60*24)<=period;
+  });
+  const total=leads.length;
+  const byStatus={}; leads.forEach(l=>{const s=l.final_lead_status||'Unknown';byStatus[s]=(byStatus[s]||0)+1;});
+  const hot=byStatus['Hot']||0,warm=byStatus['Warm']||0,won=byStatus['Won']||0,dead=byStatus['Dead']||0;
+  const bySource={};leads.forEach(l=>{const s=l.lead_source||'Unknown';bySource[s]=(bySource[s]||0)+1;});
+  const byCity={};leads.forEach(l=>{const c=l.city||'Unknown';byCity[c]=(byCity[c]||0)+1;});
+  const byCallStatus={};leads.forEach(l=>{const s=l.call_status||'Unknown';byCallStatus[s]=(byCallStatus[s]||0)+1;});
+  const quoted=leads.filter(l=>l.quote_status==='Quoted').length;
+  const qualified=leads.filter(l=>l.connected_call_status==='Lead Qualified').length;
+
+  const topCities=Object.entries(byCity).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const convRate=total?Math.round((won/total)*100):0;
+
+  document.getElementById('dashboard-content').innerHTML=`
+    <div class="stats-row stats-5" style="margin-bottom:14px;">
+      <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val">${total}</div><div class="stat-sub">in selected period</div></div>
+      <div class="stat-card"><div class="stat-label">Hot Leads</div><div class="stat-val" style="color:#D85A30;">${hot}</div><div class="stat-sub">${total?Math.round(hot/total*100):0}% of total</div></div>
+      <div class="stat-card"><div class="stat-label">Warm Leads</div><div class="stat-val" style="color:#BA7517;">${warm}</div><div class="stat-sub">${total?Math.round(warm/total*100):0}% of total</div></div>
+      <div class="stat-card"><div class="stat-label">Won</div><div class="stat-val" style="color:#1D9E75;">${won}</div><div class="stat-sub">Conversion: ${convRate}%</div></div>
+      <div class="stat-card"><div class="stat-label">Quoted</div><div class="stat-val" style="color:#7F77DD;">${quoted}</div><div class="stat-sub">${qualified} qualified</div></div>
+    </div>
+    <div class="dash-grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Lead status funnel</div>
+        ${[['Total leads',total,total,'#7F77DD'],['Hot',hot,total,'#D85A30'],['Warm',warm,total,'#BA7517'],['Qualified',qualified,total,'#378ADD'],['Quoted',quoted,total,'#1D9E75'],['Won',won,total,'#27500A']].map(([l,v,t,c])=>`
+          <div class="funnel-bar">
+            <div class="funnel-label"><span>${l}</span><span style="font-weight:600;">${v}</span></div>
+            <div class="funnel-track"><div class="funnel-fill" style="width:${t?Math.round(v/t*100):0}%;background:${c};"></div></div>
+          </div>`).join('')}
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Leads by source</div>
+        <canvas id="chart-source" height="180"></canvas>
+      </div>
+    </div>
+    <div class="dash-grid-3">
+      <div class="chart-card">
+        <div class="chart-title">Call status breakdown</div>
+        <canvas id="chart-call" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top cities</div>
+        ${topCities.map(([c,v])=>`
+          <div class="funnel-bar">
+            <div class="funnel-label"><span>${c}</span><span style="font-weight:600;">${v}</span></div>
+            <div class="funnel-track"><div class="funnel-fill" style="width:${topCities[0][1]?Math.round(v/topCities[0][1]*100):0}%;background:#7F77DD;"></div></div>
+          </div>`).join('')||'<div class="empty">No data</div>'}
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Lead status distribution</div>
+        <canvas id="chart-status" height="200"></canvas>
+      </div>
+    </div>
+    <div class="dash-grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Property type split</div>
+        <canvas id="chart-proptype" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Property specification</div>
+        <canvas id="chart-propspec" height="160"></canvas>
+      </div>
+    </div>`;
+
+  setTimeout(()=>{
+    destroyCharts();
+    const bySpec={};leads.forEach(l=>{if(l.property_specification){bySpec[l.property_specification]=(bySpec[l.property_specification]||0)+1;}});
+    const byPropType={};leads.forEach(l=>{if(l.property_type){byPropType[l.property_type]=(byPropType[l.property_type]||0)+1;}});
+    mkDoughnut('chart-source',Object.keys(bySource),Object.values(bySource),'Lead Source');
+    mkDoughnut('chart-call',Object.keys(byCallStatus),Object.values(byCallStatus),'Call Status');
+    mkDoughnut('chart-status',['Hot','Warm','Cold','Won','Dead'],[byStatus['Hot']||0,byStatus['Warm']||0,byStatus['Cold']||0,byStatus['Won']||0,byStatus['Dead']||0],'Status');
+    mkBar('chart-proptype',Object.keys(byPropType),Object.values(byPropType));
+    mkBar('chart-propspec',['2BHK','3BHK','4BHK','5BHK','5BHK+'],[bySpec['2BHK']||0,bySpec['3BHK']||0,bySpec['4BHK']||0,bySpec['5BHK']||0,bySpec['5BHK+']||0]);
+  },50);
+}
+
+const COLORS=['#7F77DD','#D85A30','#1D9E75','#BA7517','#378ADD','#639922','#A32D2D','#0C447C','#444441','#633806'];
+function destroyCharts(){Object.values(state.charts).forEach(c=>{try{c.destroy();}catch(e){}});state.charts={};}
+function mkDoughnut(id,labels,data,title){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  state.charts[id]=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:COLORS,borderWidth:1}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}});
+}
+function mkBar(id,labels,data){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  state.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data,backgroundColor:'#EEEDFE',borderColor:'#7F77DD',borderWidth:1,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+}
+
+// ── LEADS TABLE ───────────────────────────────────────────────────────────
+function getFilteredLeads(){
+  let leads=state.leads;
+  const fs=document.getElementById('filter-status')?.value;
+  const fc=document.getElementById('filter-city')?.value;
+  const fsrc=document.getElementById('filter-source')?.value;
+  if(fs)leads=leads.filter(l=>l.final_lead_status===fs);
+  if(fc)leads=leads.filter(l=>l.city===fc);
+  if(fsrc)leads=leads.filter(l=>l.lead_source===fsrc);
+  return leads;
+}
+
+function renderLeads(){
+  const leads=getFilteredLeads();
+  const cols=['name','phone','city','lead_source','call_status','final_lead_status','quote_status','created_at'];
+  document.getElementById('leads-thead').innerHTML=cols.map(k=>`<th>${fieldLabel(k)}</th>`).join('')+'<th></th>';
+  const tb=document.getElementById('leads-tbody');
+  if(!leads.length){tb.innerHTML=`<tr><td colspan="${cols.length+1}" class="empty">No leads found.</td></tr>`;return;}
+  tb.innerHTML=leads.map(l=>`<tr class="clickable" onclick="openLead('${l.id}')">
+    ${cols.map(k=>{
+      if(k==='name')return`<td><div class="client-cell"><div class="avatar">${initials(l.name)}</div>${l.name||'—'}</div></td>`;
+      if(k==='created_at')return`<td>${fmtDate(l.created_at)}</td>`;
+      if(['final_lead_status','call_status','connected_call_status','quote_status'].includes(k))return`<td>${statusBadge(l[k],k)}</td>`;
+      return`<td>${l[k]||'—'}</td>`;
+    }).join('')}
+    <td><button class="btn btn-sm" onclick="event.stopPropagation();openLeadEdit('${l.id}')"><i class="ti ti-edit"></i></button></td>
+  </tr>`).join('');
+}
+
+function fieldLabel(key){const f=ALL_FIELDS.find(x=>x.key===key);return f?f.label:key.replace(/_/g,' ');}
+
+function openLead(id){state.selectedLead=id;state.selectedTab='notes';switchView('lead-detail');}
+function openLeadEdit(id){state.selectedLead=id;openEditLead();}
+
+function renderLeadDetail(){
+  const l=state.leads.find(x=>x.id===state.selectedLead);if(!l)return;
+  const notes=state.notes.filter(n=>n.lead_id===l.id);
+  const infoFields=ALL_FIELDS.filter(f=>state.fieldVisible[f.key]&&f.key!=='comments'&&f.type!=='textarea');
+  let tabContent='';
+  if(state.selectedTab==='notes'){
+    tabContent=notes.length?notes.map(n=>`<div class="note-item"><div class="note-meta">${fmtDate(n.created_at)}</div><div class="note-text">${n.text}</div></div>`).join(''):`<div class="empty">No notes yet.</div>`;
+  }
+  document.getElementById('lead-detail-content').innerHTML=`
+    <div class="detail-header">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;">
+        <div class="avatar" style="width:44px;height:44px;font-size:15px;">${initials(l.name)}</div>
+        <div>
+          <div class="detail-name">${l.name||'—'}</div>
+          <div class="detail-meta">${l.email||''} ${l.phone?'· '+l.phone:''} ${l.city?'· '+l.city:''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${statusBadge(l.final_lead_status,'final_lead_status')}
+        ${statusBadge(l.call_status,'call_status')}
+        ${statusBadge(l.quote_status,'quote_status')}
+      </div>
+    </div>
+    <div class="field-grid">
+      ${infoFields.map(f=>`<div class="info-block"><div class="info-label">${f.label}</div><div class="info-val">${fmtVal(l,f.key)}</div></div>`).join('')}
+    </div>
+    ${l.requirements&&l.requirements.length?`<div class="note-item" style="margin-bottom:14px;"><div class="info-label">Requirements</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">${(l.requirements||[]).map(r=>`<span class="ms-chip selected">${r}</span>`).join('')}</div></div>`:''}
+    ${l.comments?`<div class="note-item" style="margin-bottom:14px;"><div class="info-label">Comments</div><div class="note-text">${l.comments}</div></div>`:''}
+    <div class="tabs">
+      <div class="tab ${state.selectedTab==='notes'?'active':''}" onclick="setLeadTab('notes')">Notes</div>
+    </div>
+    <div>${tabContent}</div>`;
+}
+function setLeadTab(t){state.selectedTab=t;renderLeadDetail();}
+
+// ── PIPELINE ──────────────────────────────────────────────────────────────
+function renderPipeline(){
+  const stages=['Cold','Warm','Hot','Won','Dead'];
+  const colors={Cold:'#378ADD',Warm:'#BA7517',Hot:'#D85A30',Won:'#1D9E75',Dead:'#888'};
+  document.getElementById('pipeline-board').innerHTML=stages.map(s=>{
+    const cards=state.leads.filter(l=>(l.final_lead_status||'Cold')===s);
+    return`<div class="pipe-col">
+      <div class="pipe-header" style="color:${colors[s]};">${s}<span class="pipe-count">${cards.length}</span></div>
+      ${cards.map(l=>`<div class="pipe-card ${s.toLowerCase()}" onclick="openLead('${l.id}')">
+        <div class="pipe-card-name">${l.name||'—'}</div>
+        <div class="pipe-card-sub">${l.city||''} ${l.property_type?'· '+l.property_type:''}</div>
+        <div class="pipe-card-meta">
+          ${l.phone?`<span><i class="ti ti-phone" style="font-size:10px;"></i> ${l.phone}</span>`:''}
+          ${l.interior_budget?`<span>💰 ${l.interior_budget}</span>`:''}
+        </div>
+      </div>`).join('')}
+    </div>`;
   }).join('');
 }
 
-function getClientFormData(){
+// ── TEAM VIEWS ────────────────────────────────────────────────────────────
+function renderTeamView(team,title){
+  const fields=state.groupFields[team]||[];
+  const leads=state.leads;
+  const el=document.getElementById(team+'-content');
+  if(!fields.length){el.innerHTML=`<div class="empty">No fields assigned to this team. Go to Settings → Team groups.</div>`;return;}
+  el.innerHTML=`
+    <div class="table-wrap">
+      <table>
+        <thead><tr>${fields.map(k=>`<th>${fieldLabel(k)}</th>`).join('')}<th></th></tr></thead>
+        <tbody>${leads.length?leads.map(l=>`<tr class="clickable" onclick="openLead('${l.id}')">
+          ${fields.map(k=>{
+            if(k==='name')return`<td><div class="client-cell"><div class="avatar">${initials(l.name)}</div>${l.name||'—'}</div></td>`;
+            if(['final_lead_status','call_status','connected_call_status','quote_status'].includes(k))return`<td>${statusBadge(l[k],k)}</td>`;
+            if(ALL_FIELDS.find(f=>f.key===k)?.type==='multiselect')return`<td>${(l[k]||[]).join(', ')||'—'}</td>`;
+            return`<td>${l[k]||'—'}</td>`;
+          }).join('')}
+          <td><button class="btn btn-sm" onclick="event.stopPropagation();openTeamEdit('${l.id}','${team}')"><i class="ti ti-edit"></i></button></td>
+        </tr>`).join(''):`<tr><td colspan="${fields.length+1}" class="empty">No leads yet.</td></tr>`}</tbody>
+      </table>
+    </div>`;
+}
+
+function openTeamEdit(id,team){
+  state.selectedLead=id;
+  const l=state.leads.find(x=>x.id===id);if(!l)return;
+  const fields=state.groupFields[team]||[];
+  document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'} (${team} team fields only)`;
+  buildLeadForm('lead-edit-body',l,fields);
+  openModal('edit-lead');
+}
+
+// ── LEAD FORM ─────────────────────────────────────────────────────────────
+function buildLeadForm(containerId,existingData={},limitFields=null){
+  const el=document.getElementById(containerId);
+  const sections=SECTIONS.map(sec=>{
+    const flds=sec.fields.filter(f=>limitFields?limitFields.includes(f.key):state.fieldVisible[f.key]);
+    if(!flds.length)return'';
+    return`<div class="form-section">
+      <div class="form-section-title">${sec.title}</div>
+      <div class="form-grid">${flds.map(f=>buildField(f,existingData[f.key])).join('')}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=sections||'<div class="empty">No fields enabled. Go to Settings.</div>';
+  // init multiselects
+  ALL_FIELDS.filter(f=>f.type==='multiselect').forEach(f=>{
+    const container=document.getElementById('ms-'+f.key);
+    if(!container)return;
+    const current=existingData[f.key]||[];
+    container.querySelectorAll('.ms-chip').forEach(chip=>{
+      if(current.includes(chip.dataset.val))chip.classList.add('selected');
+      chip.onclick=()=>chip.classList.toggle('selected');
+    });
+  });
+}
+
+function buildField(f,val=''){
+  val=val||'';
+  let input='';
+  if(f.type==='select'){
+    input=`<select id="lf-${f.key}"><option value="">Select...</option>${(f.options||[]).filter(o=>o).map(o=>`<option${val===o?' selected':''}>${o}</option>`).join('')}</select>`;
+  }else if(f.type==='textarea'){
+    input=`<textarea id="lf-${f.key}" placeholder="${f.placeholder||''}" style="min-height:60px;">${val}</textarea>`;
+  }else if(f.type==='multiselect'){
+    input=`<div id="ms-${f.key}" class="multi-select">${(f.options||[]).map(o=>`<span class="ms-chip" data-val="${o}">${o}</span>`).join('')}</div>`;
+  }else{
+    input=`<input id="lf-${f.key}" type="${f.type}" value="${val}" placeholder="${f.placeholder||''}">`;
+  }
+  const isWide=f.type==='textarea'||f.type==='multiselect';
+  return`<div class="mfield"${isWide?' style="grid-column:span 2;"':''}><label>${f.label}${f.required?' *':''}</label>${input}</div>`;
+}
+
+function getLeadFormData(limitFields=null){
   const data={};
-  ALL_FIELDS.filter(f=>isFieldEnabled(f.key)).forEach(f=>{
-    const el=document.getElementById('cf-'+f.key);
-    if(el)data[f.key]=el.value;
+  const fields=limitFields?ALL_FIELDS.filter(f=>limitFields.includes(f.key)):ALL_FIELDS.filter(f=>state.fieldVisible[f.key]);
+  fields.forEach(f=>{
+    if(f.type==='multiselect'){
+      const container=document.getElementById('ms-'+f.key);
+      if(container)data[f.key]=[...container.querySelectorAll('.ms-chip.selected')].map(c=>c.dataset.val);
+    }else{
+      const el=document.getElementById('lf-'+f.key);
+      if(el)data[f.key]=el.value;
+    }
   });
   return data;
 }
 
-function renderClients(){
-  const counts={};
-  state.clients.forEach(c=>{counts[c.status]=(counts[c.status]||0)+1;});
-  document.getElementById('client-stats').innerHTML=`
-    <div class="stat"><div class="stat-label">Total clients</div><div class="stat-val">${state.clients.length}</div></div>
-    <div class="stat"><div class="stat-label">Leads</div><div class="stat-val">${counts['Lead']||0}</div></div>
-    <div class="stat"><div class="stat-label">Active</div><div class="stat-val">${counts['Active']||0}</div></div>
-    <div class="stat"><div class="stat-label">In design</div><div class="stat-val">${counts['In design']||0}</div></div>`;
-  const enabledFields=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)&&['name','phone','type','status','budget','city','source'].includes(f.key));
-  document.getElementById('clients-thead').innerHTML=enabledFields.map(f=>`<th>${f.label}</th>`).join('');
-  const tb=document.getElementById('clients-table');
-  if(!state.clients.length){tb.innerHTML=`<tr><td colspan="${enabledFields.length}" class="empty">No clients yet — add your first one!</td></tr>`;return;}
-  tb.innerHTML=state.clients.map(c=>`<tr class="clickable" onclick="openClient('${c.id}')">
-    ${enabledFields.map(f=>{
-      if(f.key==='name')return`<td><div class="client-cell"><div class="avatar">${initials(c.name)}</div>${c.name||'—'}</div></td>`;
-      if(f.key==='status')return`<td>${statusBadge(c.status)}</td>`;
-      return`<td>${c[f.key]||'—'}</td>`;
-    }).join('')}
-  </tr>`).join('');
+function openAddLead(){buildLeadForm('lead-form-body');openModal('add-lead');}
+function openEditLead(){
+  const l=state.leads.find(x=>x.id===state.selectedLead);if(!l)return;
+  document.getElementById('edit-lead-sub').textContent=`Editing: ${l.name||'Lead'}`;
+  buildLeadForm('lead-edit-body',l);
+  openModal('edit-lead');
 }
 
-function openClient(id){state.selectedClient=id;state.selectedClientTab='notes';switchView('client-detail');}
-
-function renderClientDetail(){
-  const c=state.clients.find(x=>x.id===state.selectedClient);if(!c)return;
-  const projects=state.projects.filter(p=>p.client_id===c.id);
-  const quotes=state.quotes.filter(q=>q.client_id===c.id);
-  const notes=state.dbNotes.filter(n=>n.client_id===c.id);
-  const followups=state.followups.filter(f=>f.client_id===c.id&&!f.done);
-  const infoFields=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)&&f.key!=='name'&&f.key!=='notes'&&f.type!=='textarea');
-  let tabContent='';
-  if(state.selectedClientTab==='notes'){tabContent=notes.length?notes.map(n=>`<div class="note-item"><div class="note-meta">${fmtDate(n.created_at)}</div><div class="note-text">${n.text}</div></div>`).join(''):`<div class="empty">No notes yet.</div>`;}
-  else if(state.selectedClientTab==='projects'){tabContent=projects.length?`<div class="table-wrap"><table><thead><tr><th>Project</th><th>Stage</th><th>Value</th></tr></thead><tbody>${projects.map(p=>`<tr><td>${p.name}</td><td>${statusBadge(p.stage)}</td><td>${p.value||'—'}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No projects.</div>`;}
-  else if(state.selectedClientTab==='quotes'){tabContent=quotes.length?`<div class="table-wrap"><table><thead><tr><th>Description</th><th>Amount</th><th>Status</th></tr></thead><tbody>${quotes.map(q=>`<tr><td>${q.description||'—'}</td><td>₹${Number(q.amount||0).toLocaleString('en-IN')}</td><td>${statusBadge(q.status)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No quotes.</div>`;}
-  document.getElementById('client-detail-content').innerHTML=`
-    <div class="detail-header">
-      <div class="avatar" style="width:44px;height:44px;font-size:14px;">${initials(c.name)}</div>
-      <div style="flex:1;"><div class="detail-name">${c.name}</div><div style="font-size:12px;color:#aaa;margin-top:2px;">${c.email||''} ${c.phone?'· '+c.phone:''}</div></div>
-      <div>${statusBadge(c.status)}</div>
-    </div>
-    <div class="detail-grid">
-      ${infoFields.map(f=>`<div class="info-block"><div class="info-label">${f.label}</div><div class="info-val">${c[f.key]||'—'}</div></div>`).join('')}
-    </div>
-    ${c.address?`<div class="note-item" style="margin-bottom:16px;"><div class="info-label">Address</div><div class="note-text">${c.address}</div></div>`:''}
-    <div class="tabs">${['notes','projects','quotes'].map(t=>`<div class="tab ${state.selectedClientTab===t?'active':''}" onclick="setClientTab('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}</div>
-    <div>${tabContent}</div>`;
-}
-function setClientTab(t){state.selectedClientTab=t;renderClientDetail();}
-
-function openEditClient(){
-  const c=state.clients.find(x=>x.id===state.selectedClient);if(!c)return;
-  openModal('edit-client');
-  buildClientForm('client-edit-fields',c);
-}
-
-async function updateClient(){
-  const data=getClientFormData();
+async function saveLead(){
+  const data=getLeadFormData();
   if(!data.name){toast('Name is required');return;}
-  const{error}=await sb.from('clients').update(data).eq('id',state.selectedClient);
+  const{error}=await sb.from('leads').insert(data);
   if(error){toast('Error: '+error.message);return;}
-  closeAllModals();toast('Client updated!');await loadAll();renderClientDetail();
+  closeAllModals();toast('Lead added!');await loadAll();
 }
 
-async function deleteClient(){
-  if(!confirm('Delete this client? This cannot be undone.'))return;
-  await sb.from('client_notes').delete().eq('client_id',state.selectedClient);
-  await sb.from('followups').delete().eq('client_id',state.selectedClient);
-  await sb.from('quotes').delete().eq('client_id',state.selectedClient);
-  await sb.from('projects').delete().eq('client_id',state.selectedClient);
-  await sb.from('clients').delete().eq('id',state.selectedClient);
-  toast('Client deleted.');switchView('clients');await loadAll();
+async function updateLead(){
+  const data=getLeadFormData();
+  if(data.name===''&&!data.name){toast('Name is required');return;}
+  const{error}=await sb.from('leads').update(data).eq('id',state.selectedLead);
+  if(error){toast('Error: '+error.message);return;}
+  closeAllModals();toast('Lead updated!');await loadAll();
+  if(state.view==='lead-detail')renderLeadDetail();
+  else renderCurrent();
 }
 
-function renderPipeline(){
-  const stages=['Lead','Proposal','In design','Done'];
-  document.getElementById('pipeline-board').innerHTML=stages.map(s=>{
-    const cards=state.projects.filter(p=>p.stage===s);
-    return`<div class="pipe-col"><div class="pipe-header">${s}<span class="pipe-count">${cards.length}</span></div>${cards.map(p=>{const cl=state.clients.find(c=>c.id===p.client_id);return`<div class="pipe-card"><div class="pipe-card-name">${p.name}</div><div class="pipe-card-sub">${cl?cl.name:'—'}</div><div class="pipe-card-val">${p.value||'—'}</div></div>`;}).join('')}</div>`;
-  }).join('');
+async function deleteLead(){
+  if(!confirm('Delete this lead? Cannot be undone.'))return;
+  await sb.from('lead_notes').delete().eq('lead_id',state.selectedLead);
+  await sb.from('leads').delete().eq('id',state.selectedLead);
+  toast('Lead deleted.');switchView('leads');await loadAll();
 }
 
-function renderQuotes(){
-  const tb=document.getElementById('quotes-table');
-  if(!state.quotes.length){tb.innerHTML=`<tr><td colspan="6" class="empty">No quotes yet.</td></tr>`;return;}
-  tb.innerHTML=state.quotes.map((q,i)=>{const c=state.clients.find(x=>x.id===q.client_id);return`<tr><td>#${String(i+1).padStart(3,'0')}</td><td>${c?c.name:'—'}</td><td>${q.description||'—'}</td><td>₹${Number(q.amount||0).toLocaleString('en-IN')}</td><td>${statusBadge(q.status)}</td><td>${fmtDate(q.created_at)}</td></tr>`;}).join('');
+async function addNote(){
+  const text=document.getElementById('n-text').value.trim();if(!text||!state.selectedLead)return;
+  const{error}=await sb.from('lead_notes').insert({lead_id:state.selectedLead,text});
+  if(error){toast('Error: '+error.message);return;}
+  closeAllModals();toast('Note saved!');await loadAll();renderLeadDetail();
 }
 
-function renderFollowups(){
-  const el=document.getElementById('followups-content');
-  const pmap={High:'badge-high',Medium:'badge-med',Low:'badge-low'};
-  const dmap={High:'dot-high',Medium:'dot-med',Low:'dot-low'};
-  const pending=state.followups.filter(f=>!f.done);
-  const done=state.followups.filter(f=>f.done);
-  const renderList=list=>list.map(f=>{const c=state.clients.find(x=>x.id===f.client_id);return`<div class="fu-item" style="${f.done?'opacity:0.5':''}"><div class="fu-dot ${dmap[f.priority]||'dot-low'}"></div><div style="flex:1;"><div style="font-size:13px;color:#1a1a1a;">${f.note||''}</div><div style="font-size:11px;color:#aaa;margin-top:3px;">${c?c.name:'—'} · Due ${fmtDate(f.due_date)} · <span class="badge ${pmap[f.priority]||'badge-low'}" style="font-size:10px;padding:1px 7px;">${f.priority}</span></div></div>${!f.done?`<button class="btn" style="font-size:11px;padding:5px 10px;" onclick="markDone('${f.id}')"><i class="ti ti-check"></i> Done</button>`:''}</div>`;}).join('');
-  el.innerHTML=`<div class="section-label" style="margin-bottom:12px;">Pending (${pending.length})</div>${pending.length?renderList(pending):`<div class="empty">All caught up!</div>`}${done.length?`<div class="section-label" style="margin:20px 0 12px;">Completed</div>${renderList(done)}`:''}`;
+// ── SETTINGS PAGE ─────────────────────────────────────────────────────────
+function showSettingsPanel(panel){
+  document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden'));
+  document.getElementById('settings-panel-'+panel).classList.remove('hidden');
+  document.querySelectorAll('.settings-nav-item').forEach(i=>i.classList.remove('active'));
+  event.target.classList.add('active');
 }
 
-function renderSettings(){
-  const el=document.getElementById('settings-content');
-  el.innerHTML=`
-    <div class="settings-save-bar">
-      <div class="settings-save-info"><i class="ti ti-toggle-left" style="vertical-align:-2px;margin-right:6px;"></i> Toggle fields on or off — changes apply instantly to the Add Client form and client list.</div>
-      <button class="btn btn-primary" onclick="applyFieldSettings()"><i class="ti ti-check"></i> Save & apply</button>
-    </div>
-    <div class="settings-grid">
-      <div class="settings-card">
-        <div class="settings-card-title">Client form fields</div>
-        <div class="settings-card-sub">Choose which fields appear when adding or editing a client</div>
-        ${ALL_FIELDS.map(f=>`
-          <div class="field-toggle">
-            <div class="field-toggle-info">
-              <div class="field-toggle-name">${f.label}${f.required?' <span style="color:#A32D2D;font-size:10px;">required</span>':''}</div>
-              ${f.locked?'<div class="field-toggle-desc">Always shown</div>':''}
-            </div>
-            <label class="toggle">
-              <input type="checkbox" id="toggle-${f.key}" ${isFieldEnabled(f.key)?'checked':''} ${f.locked?'disabled':''} onchange="previewToggle('${f.key}',this.checked)">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>`).join('')}
+function renderSettingsPage(){
+  // Field toggles
+  document.getElementById('field-toggles').innerHTML=SECTIONS.map(sec=>`
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#7F77DD;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">${sec.title}</div>
+      ${sec.fields.map(f=>`
+        <div class="toggle-row">
+          <div class="toggle-info"><div class="toggle-name">${f.label}</div></div>
+          <label class="toggle"><input type="checkbox" id="fv-${f.key}" ${state.fieldVisible[f.key]!==false?'checked':''} onchange="state.fieldVisible['${f.key}']=this.checked"><span class="toggle-slider"></span></label>
+        </div>`).join('')}
+    </div>`).join('');
+
+  // Group settings
+  const groupNames={calling:'Calling Team',sales:'Sales & Architect Team',design:'Design Team',project:'Project Management Team'};
+  document.getElementById('group-settings').innerHTML=Object.entries(groupNames).map(([key,name])=>`
+    <div class="group-card">
+      <div class="group-title">${name}</div>
+      <div class="group-sub">Click fields to toggle them on/off for this team</div>
+      <div class="group-fields">
+        ${ALL_FIELDS.map(f=>`<span class="group-chip ${(state.groupFields[key]||[]).includes(f.key)?'on':''}" onclick="toggleGroupField('${key}','${f.key}',this)">${f.label}</span>`).join('')}
       </div>
-      <div class="settings-card">
-        <div class="settings-card-title">What each field does</div>
-        <div class="settings-card-sub">Reference guide for all available fields</div>
-        ${ALL_FIELDS.map(f=>`
-          <div style="padding:8px 0;border-bottom:1px solid #f5f5f5;">
-            <div style="font-size:13px;font-weight:500;color:#1a1a1a;">${f.label}</div>
-            <div style="font-size:11px;color:#aaa;margin-top:2px;">${fieldDesc(f.key)}</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
+    </div>`).join('');
 }
 
-function fieldDesc(key){
-  const descs={name:'Client full name — always required',email:'Email address for correspondence',phone:'Primary contact number',whatsapp:'WhatsApp number if different from phone',type:'Residential, commercial, hospitality etc.',status:'Current stage in your pipeline',budget:'Approximate project budget',city:'City or area where the project is',property_size:'Size of the space in square feet',project_type:'Type of interior work required',source:'How the client found your studio',timeline:'Expected project start date',alternate_phone:'Secondary contact number',address:'Full project or client address',notes:'Any notes from the first conversation'};
-  return descs[key]||'';
+function toggleGroupField(group,fieldKey,el){
+  const arr=state.groupFields[group]||[];
+  const idx=arr.indexOf(fieldKey);
+  if(idx>-1)arr.splice(idx,1);else arr.push(fieldKey);
+  state.groupFields[group]=arr;
+  el.classList.toggle('on',arr.includes(fieldKey));
 }
 
-function previewToggle(key,val){ state.fieldSettings[key]=val; }
-
-function applyFieldSettings(){
-  ALL_FIELDS.forEach(f=>{
-    const el=document.getElementById('toggle-'+f.key);
-    if(el&&!f.locked)state.fieldSettings[f.key]=el.checked;
+function saveSettings(){
+  SECTIONS.flatMap(s=>s.fields).forEach(f=>{
+    const el=document.getElementById('fv-'+f.key);
+    if(el)state.fieldVisible[f.key]=el.checked;
   });
-  saveFieldSettings();
+  saveSettings_store();
   toast('Settings saved!');
-  renderClients();
+}
+function saveSettings_store(){localStorage.setItem('crm_fv',JSON.stringify(state.fieldVisible));localStorage.setItem('crm_gf',JSON.stringify(state.groupFields));}
+
+function exportCSV(){
+  const leads=getFilteredLeads();
+  const keys=ALL_FIELDS.filter(f=>state.fieldVisible[f.key]).map(f=>f.key);
+  const headers=ALL_FIELDS.filter(f=>state.fieldVisible[f.key]).map(f=>f.label);
+  const rows=[headers,...leads.map(l=>keys.map(k=>Array.isArray(l[k])?(l[k]||[]).join('; '):(l[k]||'')))];
+  const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='spacioworks-leads.csv';a.click();
 }
 
 function openModal(type){
   document.getElementById('modal-overlay').classList.remove('hidden');
   document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));
   document.getElementById('modal-'+type).classList.remove('hidden');
-  if(type==='add-client')buildClientForm('client-form-fields');
-  if(['add-project','add-quote','add-followup'].includes(type)){
-    ['p-client','q-client','f-client'].forEach(sid=>{const s=document.getElementById(sid);if(s)s.innerHTML=state.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');});
-  }
 }
 function closeMO(e){if(e.target===document.getElementById('modal-overlay'))closeAllModals();}
 function closeAllModals(){document.getElementById('modal-overlay').classList.add('hidden');document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));}
-
-async function saveClient(){
-  const data=getClientFormData();
-  if(!data.name){toast('Name is required');return;}
-  const{error}=await sb.from('clients').insert(data);
-  if(error){toast('Error: '+error.message);return;}
-  closeAllModals();toast('Client added!');await loadAll();
-}
-
-async function addProject(){
-  const name=document.getElementById('p-name').value.trim();if(!name)return;
-  const{error}=await sb.from('projects').insert({name,client_id:document.getElementById('p-client').value,stage:document.getElementById('p-stage').value,value:document.getElementById('p-value').value});
-  if(error){toast('Error: '+error.message);return;}
-  closeAllModals();toast('Project added!');await loadAll();
-}
-async function addQuote(){
-  const{error}=await sb.from('quotes').insert({client_id:document.getElementById('q-client').value,description:document.getElementById('q-desc').value,amount:parseFloat(document.getElementById('q-amount').value)||0,status:document.getElementById('q-status').value});
-  if(error){toast('Error: '+error.message);return;}
-  closeAllModals();toast('Quote saved!');await loadAll();
-}
-async function addFollowup(){
-  const{error}=await sb.from('followups').insert({client_id:document.getElementById('f-client').value,note:document.getElementById('f-note').value,due_date:document.getElementById('f-date').value||null,priority:document.getElementById('f-priority').value,done:false});
-  if(error){toast('Error: '+error.message);return;}
-  closeAllModals();toast('Reminder saved!');await loadAll();
-}
-async function addNote(){
-  const text=document.getElementById('n-text').value.trim();if(!text||!state.selectedClient)return;
-  const{error}=await sb.from('client_notes').insert({client_id:state.selectedClient,text});
-  if(error){toast('Error: '+error.message);return;}
-  closeAllModals();toast('Note saved!');await loadAll();renderClientDetail();
-}
-async function markDone(id){await sb.from('followups').update({done:true}).eq('id',id);await loadAll();}
-
-function exportCSV(){
-  const enabledKeys=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)).map(f=>f.key);
-  const headers=ALL_FIELDS.filter(f=>isFieldEnabled(f.key)).map(f=>f.label);
-  const rows=[headers,...state.clients.map(c=>enabledKeys.map(k=>c[k]||''))];
-  const csv=rows.map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='spacioworks-clients.csv';a.click();
-}
 
 function toast(msg){let t=document.getElementById('toast-el');if(!t){t=document.createElement('div');t.id='toast-el';t.className='toast';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';setTimeout(()=>{t.style.opacity='0';},2500);}
 
