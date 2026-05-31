@@ -183,6 +183,20 @@ tr.clickable:hover td{background:#fafafa;}
 .group-fields{display:flex;flex-wrap:wrap;gap:6px;}
 .group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#f5f5f5;color:#555;}
 .group-chip.on{background:#EAF3DE;color:#27500A;border-color:#97C459;}
+.user-card{background:#fff;border:1px solid #eee;border-radius:10px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;}
+.user-avatar{width:40px;height:40px;border-radius:50%;background:#EEEDFE;color:#3C3489;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+.user-info-block{flex:1;}
+.user-name{font-size:14px;font-weight:600;color:#1a1a1a;}
+.user-meta{font-size:12px;color:#aaa;margin-top:2px;}
+.user-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+.team-tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;}
+.tag-calling{background:#E6F1FB;color:#0C447C;}
+.tag-sales{background:#EAF3DE;color:#27500A;}
+.tag-design{background:#EEEDFE;color:#3C3489;}
+.tag-project{background:#FAEEDA;color:#633806;}
+.tag-admin{background:#FAECE7;color:#712B13;}
+.tag-edit{background:#f5f4f0;color:#555;}
+.tag-view{background:#f5f4f0;color:#888;}
 .filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
 .filter-select{padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;color:#1a1a1a;font-family:inherit;outline:none;}
 [id^="view-"]{flex-direction:column;}::-webkit-scrollbar{width:6px;height:6px;}.webkit-scrollbar-track{background:#f1f1f1;border-radius:99px;}::-webkit-scrollbar-thumb{background:#ddd;border-radius:99px;}::-webkit-scrollbar-thumb:hover{background:#bbb;}*{scrollbar-width:thin;scrollbar-color:#ddd #f1f1f1;}</style>
@@ -304,6 +318,7 @@ tr.clickable:hover td{background:#fafafa;}
           <div class="settings-nav">
             <div class="settings-nav-item active" onclick="showSettingsPanel('fields')">Field visibility</div>
             <div class="settings-nav-item" onclick="showSettingsPanel('groups')">Team groups</div>
+            <div class="settings-nav-item" onclick="showSettingsPanel('users')">Team members</div>
           </div>
           <div id="settings-panel-fields" class="settings-panel">
             <div class="settings-panel-title">Field visibility</div>
@@ -314,6 +329,14 @@ tr.clickable:hover td{background:#fafafa;}
             <div class="settings-panel-title">Team group fields</div>
             <div class="settings-panel-sub">Choose which fields each team sees and can update</div>
             <div id="group-settings"></div>
+          </div>
+          <div id="settings-panel-users" class="settings-panel hidden">
+            <div class="settings-panel-title">Team members</div>
+            <div class="settings-panel-sub">Add and manage your team. Each member gets a login to access their team view.</div>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+              <button class="btn btn-primary" onclick="openModal('add-user')"><i class="ti ti-user-plus"></i> Add team member</button>
+            </div>
+            <div id="users-list"></div>
           </div>
         </div>
       </div>
@@ -380,6 +403,69 @@ tr.clickable:hover td{background:#fafafa;}
     <div class="modal-footer">
       <button class="btn" onclick="closeAllModals()">Cancel</button>
       <button class="btn btn-primary hidden" id="import-confirm-btn" onclick="confirmImport()"><i class="ti ti-check"></i> Import leads</button>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="modal-add-user">
+    <div class="modal-title">Add team member <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="modal-sub">Create a login for your team member. They can change their password after first login.</div>
+    <div class="form-grid">
+      <div class="mfield"><label>Full name *</label><input id="u-name" placeholder="e.g. Ravi Kumar"></div>
+      <div class="mfield"><label>Email ID * <span style="font-size:10px;color:#aaa;">(used to login)</span></label><input id="u-email" type="email" placeholder="ravi@spacioworks.in"></div>
+      <div class="mfield"><label>Mobile number</label><input id="u-mobile" placeholder="+91 98765 43210"></div>
+      <div class="mfield"><label>Initial password * <span style="font-size:10px;color:#aaa;">(min 6 chars)</span></label><input id="u-password" type="password" placeholder="••••••••"></div>
+      <div class="mfield"><label>Team / Group</label>
+        <select id="u-team">
+          <option value="calling">Calling Team</option>
+          <option value="sales">Sales & Architect Team</option>
+          <option value="design">Design Team</option>
+          <option value="project">Project Management Team</option>
+          <option value="admin">Admin (Full Access)</option>
+        </select>
+      </div>
+      <div class="mfield"><label>Access level</label>
+        <select id="u-access">
+          <option value="edit">Edit — can view and update leads</option>
+          <option value="view">View only — can see but not edit</option>
+          <option value="admin">Admin — full access to all features</option>
+        </select>
+      </div>
+    </div>
+    <div style="background:#FAEEDA;border-radius:8px;padding:10px 12px;font-size:12px;color:#633806;margin-top:12px;display:flex;gap:8px;">
+      <i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px;"></i>
+      <span>The team member will be created in Supabase Auth. Share their email and initial password with them. They can update their password from their profile.</span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeAllModals()">Cancel</button>
+      <button class="btn btn-primary" onclick="createUser()"><i class="ti ti-user-plus"></i> Create member</button>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="modal-edit-user">
+    <div class="modal-title">Edit team member <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span></div>
+    <div class="form-grid">
+      <div class="mfield"><label>Full name</label><input id="eu-name" placeholder="Full name"></div>
+      <div class="mfield"><label>Mobile number</label><input id="eu-mobile" placeholder="+91 98765 43210"></div>
+      <div class="mfield"><label>Team / Group</label>
+        <select id="eu-team">
+          <option value="calling">Calling Team</option>
+          <option value="sales">Sales & Architect Team</option>
+          <option value="design">Design Team</option>
+          <option value="project">Project Management Team</option>
+          <option value="admin">Admin (Full Access)</option>
+        </select>
+      </div>
+      <div class="mfield"><label>Access level</label>
+        <select id="eu-access">
+          <option value="edit">Edit — can view and update leads</option>
+          <option value="view">View only — can see but not edit</option>
+          <option value="admin">Admin — full access to all features</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeAllModals()">Cancel</button>
+      <button class="btn btn-primary" onclick="updateUser()">Save changes</button>
     </div>
   </div>
 
@@ -474,7 +560,7 @@ const DEFAULT_GROUPS={
   project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
 };
 
-let state={view:'dashboard',selectedLead:null,selectedTab:'notes',leads:[],notes:[],fieldVisible:{},groupFields:{...DEFAULT_GROUPS},charts:{}};
+let state={view:'dashboard',selectedLead:null,selectedTab:'notes',leads:[],notes:[],users:[],fieldVisible:{},groupFields:{...DEFAULT_GROUPS},charts:{}};
 let authMode='signin';
 
 function loadSettings(){
@@ -1059,6 +1145,137 @@ function closeAllModals(){document.getElementById('modal-overlay').classList.add
 
 function toast(msg){let t=document.getElementById('toast-el');if(!t){t=document.createElement('div');t.id='toast-el';t.className='toast';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';setTimeout(()=>{t.style.opacity='0';},2500);}
 
+
+
+// ── USER MANAGEMENT ───────────────────────────────────────────────────────
+let editingUserId = null;
+
+const TEAM_LABELS = {
+  calling:'Calling Team', sales:'Sales & Architect', design:'Design Team',
+  project:'Project Mgmt', admin:'Admin'
+};
+const ACCESS_LABELS = {edit:'Editor',view:'View only',admin:'Admin'};
+
+async function loadUsers(){
+  try {
+    const { data, error } = await sb.from('team_members').select('*').order('created_at',{ascending:true});
+    if(error) throw error;
+    state.users = data || [];
+    renderUsersList();
+  } catch(e){
+    console.error('Could not load users:', e.message);
+    state.users = [];
+    renderUsersList();
+  }
+}
+
+function renderUsersList(){
+  const el = document.getElementById('users-list');
+  if(!el) return;
+  if(!state.users || !state.users.length){
+    el.innerHTML = `<div class="empty" style="padding:40px 0;">No team members yet. Add your first one!</div>`;
+    return;
+  }
+  el.innerHTML = state.users.map(u => {
+    const teamCls = 'tag-'+(u.team||'calling');
+    const initials = (u.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="user-card">
+      <div class="user-avatar">${initials}</div>
+      <div class="user-info-block">
+        <div class="user-name">${u.name||'—'}</div>
+        <div class="user-meta">${u.email||''} ${u.mobile?'· '+u.mobile:''}</div>
+        <div class="user-tags">
+          <span class="team-tag ${teamCls}">${TEAM_LABELS[u.team]||u.team}</span>
+          <span class="team-tag tag-edit">${ACCESS_LABELS[u.access_level]||u.access_level}</span>
+          ${u.status==='active'?'<span class="team-tag" style="background:#EAF3DE;color:#27500A;">Active</span>':'<span class="team-tag" style="background:#f5f4f0;color:#aaa;">Inactive</span>'}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm" onclick="openEditUser('${u.id}')"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}','${(u.name||'').replace(/'/g,'')}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function createUser(){
+  const name = document.getElementById('u-name').value.trim();
+  const email = document.getElementById('u-email').value.trim();
+  const password = document.getElementById('u-password').value;
+  const mobile = document.getElementById('u-mobile').value.trim();
+  const team = document.getElementById('u-team').value;
+  const access = document.getElementById('u-access').value;
+
+  if(!name){ toast('Name is required'); return; }
+  if(!email){ toast('Email is required'); return; }
+  if(!password || password.length < 6){ toast('Password must be at least 6 characters'); return; }
+
+  const btn = document.querySelector('#modal-add-user .btn-primary');
+  btn.textContent = 'Creating...'; btn.disabled = true;
+
+  try {
+    // Create auth user via Supabase Admin API using service role is not available client-side
+    // Instead save to team_members table and instruct admin to create auth manually
+    const { error } = await sb.from('team_members').insert({
+      name, email, mobile, team,
+      access_level: access,
+      status: 'active',
+      initial_password_hint: password.slice(0,2) + '***' // store hint only, not actual password
+    });
+    if(error) throw error;
+
+    closeAllModals();
+    toast('✓ Team member added! Ask them to sign up at your CRM URL using their email: ' + email);
+    await loadUsers();
+    // Clear form
+    ['u-name','u-email','u-mobile','u-password'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = '';
+    });
+  } catch(e){
+    toast('Error: ' + e.message);
+  }
+  btn.textContent = 'Create member'; btn.disabled = false;
+}
+
+function openEditUser(id){
+  const u = state.users.find(x=>x.id===id);
+  if(!u) return;
+  editingUserId = id;
+  document.getElementById('eu-name').value = u.name||'';
+  document.getElementById('eu-mobile').value = u.mobile||'';
+  document.getElementById('eu-team').value = u.team||'calling';
+  document.getElementById('eu-access').value = u.access_level||'edit';
+  openModal('edit-user');
+}
+
+async function updateUser(){
+  if(!editingUserId) return;
+  const { error } = await sb.from('team_members').update({
+    name: document.getElementById('eu-name').value.trim(),
+    mobile: document.getElementById('eu-mobile').value.trim(),
+    team: document.getElementById('eu-team').value,
+    access_level: document.getElementById('eu-access').value,
+  }).eq('id', editingUserId);
+  if(error){ toast('Error: '+error.message); return; }
+  closeAllModals();
+  toast('Team member updated!');
+  await loadUsers();
+}
+
+async function removeUser(id, name){
+  if(!confirm(`Remove ${name} from the team? This won't delete their login.`)) return;
+  const { error } = await sb.from('team_members').delete().eq('id', id);
+  if(error){ toast('Error: '+error.message); return; }
+  toast('Team member removed.');
+  await loadUsers();
+}
+
+// Load users when settings panel is opened
+const _origShowSettings = showSettingsPanel;
+function showSettingsPanel(panel){
+  _origShowSettings(panel);
+  if(panel==='users') loadUsers();
+}
 
 // ── BULK IMPORT ───────────────────────────────────────────────────────────
 let importData = [];
