@@ -605,22 +605,37 @@ async function loadUserRole(u){
     state.currentAccess = 'admin';
     return;
   }
-  // Check team_members table
+  // Check team_members table — use .maybeSingle() which returns null instead of error when not found
   try{
-    const {data} = await sb.from('team_members').select('*').eq('email', u.email).single();
+    const {data, error} = await sb.from('team_members')
+      .select('*')
+      .eq('email', u.email)
+      .maybeSingle();
+
+    if(error){
+      // If RLS blocks the read, log and deny
+      console.error('team_members lookup error:', error.message);
+      state.currentRole = 'denied';
+      state.currentTeam = null;
+      state.currentAccess = null;
+      return;
+    }
+
     if(data){
       state.currentRole = data.access_level || 'edit';
       state.currentTeam = data.team || 'calling';
       state.currentAccess = data.access_level || 'edit';
     } else {
-      // Not in team_members — deny access
+      // Not in team_members table — deny access
       state.currentRole = 'denied';
       state.currentTeam = null;
       state.currentAccess = null;
     }
   } catch(e){
+    console.error('loadUserRole exception:', e.message);
     state.currentRole = 'denied';
     state.currentTeam = null;
+    state.currentAccess = null;
   }
 }
 
@@ -639,7 +654,7 @@ function applyRoleUI(){
   if(state.currentRole === 'denied'){
     document.getElementById('app-screen').classList.add('hidden');
     document.getElementById('auth-screen').classList.remove('hidden');
-    document.getElementById('auth-err').textContent = 'Access denied. Your account has not been added to the team. Please contact your admin.';
+    document.getElementById('auth-err').textContent = 'Access denied. Your email (' + u.email + ') has not been added to the team. Please ask your admin (moorthydilip@spacioworks.in) to add you in Settings → Team members.';
     document.getElementById('auth-err').classList.remove('hidden');
     sb.auth.signOut();
     return;
