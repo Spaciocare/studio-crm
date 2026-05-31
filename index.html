@@ -242,7 +242,7 @@ tr.clickable:hover td{background:#fafafa;}
     <div class="sidebar-footer">
       <div class="user-badge">
         <div class="user-email" id="user-email-display"></div>
-        <div class="user-role" id="user-role-display">Admin</div>
+        <div class="user-role" id="user-role-display">Loading...</div>
       </div>
       <button class="btn-signout" onclick="signOut()"><i class="ti ti-logout"></i> Sign out</button>
     </div>
@@ -560,7 +560,7 @@ const DEFAULT_GROUPS={
   project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
 };
 
-let state={view:'dashboard',selectedLead:null,selectedTab:'notes',leads:[],notes:[],users:[],fieldVisible:{},groupFields:{...DEFAULT_GROUPS},charts:{}};
+let state={view:'dashboard',selectedLead:null,selectedTab:'notes',leads:[],notes:[],users:[],currentUser:null,currentRole:'admin',currentTeam:'admin',currentAccess:'admin',fieldVisible:{},groupFields:{...DEFAULT_GROUPS},charts:{}};
 let authMode='signin';
 
 function loadSettings(){
@@ -585,7 +585,98 @@ async function init(){
 }
 
 function showAuth(){document.getElementById('auth-screen').classList.remove('hidden');document.getElementById('app-screen').classList.add('hidden');}
-function showApp(u){document.getElementById('auth-screen').classList.add('hidden');document.getElementById('app-screen').classList.remove('hidden');document.getElementById('user-email-display').textContent=u.email;loadAll();}
+function showApp(u){
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('user-email-display').textContent=u.email;
+  // Load user role then render UI
+  loadUserRole(u).then(()=>{
+    document.getElementById('app-screen').classList.remove('hidden');
+    applyRoleUI();
+    loadAll();
+  });
+}
+
+async function loadUserRole(u){
+  state.currentUser = u;
+  // Hardcoded super admin
+  if(u.email === 'moorthydilip@spacioworks.in'){
+    state.currentRole = 'admin';
+    state.currentTeam = 'admin';
+    state.currentAccess = 'admin';
+    return;
+  }
+  // Check team_members table
+  try{
+    const {data} = await sb.from('team_members').select('*').eq('email', u.email).single();
+    if(data){
+      state.currentRole = data.access_level || 'edit';
+      state.currentTeam = data.team || 'calling';
+      state.currentAccess = data.access_level || 'edit';
+    } else {
+      // Not in team_members — deny access
+      state.currentRole = 'denied';
+      state.currentTeam = null;
+      state.currentAccess = null;
+    }
+  } catch(e){
+    state.currentRole = 'denied';
+    state.currentTeam = null;
+  }
+}
+
+function isAdmin(){ return state.currentAccess === 'admin' || state.currentTeam === 'admin'; }
+function isViewOnly(){ return state.currentAccess === 'view'; }
+
+function applyRoleUI(){
+  const role = state.currentRole;
+  const team = state.currentTeam;
+
+  // Update role badge
+  const roleEl = document.getElementById('user-role-display');
+  const teamLabels = {calling:'Calling Team',sales:'Sales & Architect',design:'Design Team',project:'Project Mgmt',admin:'Admin'};
+  if(roleEl) roleEl.textContent = isAdmin() ? 'Admin' : (teamLabels[team] || 'Team Member');
+
+  if(state.currentRole === 'denied'){
+    document.getElementById('app-screen').classList.add('hidden');
+    document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('auth-err').textContent = 'Access denied. Your account has not been added to the team. Please contact your admin.';
+    document.getElementById('auth-err').classList.remove('hidden');
+    sb.auth.signOut();
+    return;
+  }
+
+  if(isAdmin()){
+    // Admin sees everything — show all nav items
+    document.querySelectorAll('.nav-item').forEach(el=>el.style.display='');
+    document.querySelectorAll('.nav-section').forEach(el=>el.style.display='');
+    return;
+  }
+
+  // Non-admin: hide admin section, leads, pipeline, other team views
+  // Show only their team view and dashboard
+  document.querySelectorAll('[data-view="settings"]').forEach(el=>el.parentElement.style.display='none');
+  document.querySelectorAll('.nav-section').forEach(el=>{
+    if(el.querySelector('.nav-section-label')?.textContent.trim()==='Admin') el.style.display='none';
+  });
+
+  // Hide other team views
+  const allTeams = ['calling','sales','design','project'];
+  allTeams.forEach(t=>{
+    const navItem = document.querySelector(`[data-view="${t}"]`);
+    if(navItem) navItem.style.display = t===team ? '' : 'none';
+  });
+
+  // View-only: disable edit buttons
+  if(isViewOnly()){
+    document.querySelectorAll('.btn-primary, .btn-danger').forEach(btn=>{
+      if(btn.textContent.includes('Add')||btn.textContent.includes('Edit')||btn.textContent.includes('Delete')||btn.textContent.includes('Import'))
+        btn.style.display='none';
+    });
+  }
+
+  // Redirect to their team view
+  switchView(team);
+}
 
 function toggleAuthMode(){
   authMode=authMode==='signin'?'signup':'signin';
@@ -642,6 +733,11 @@ function renderCurrent(){
 }
 
 function switchView(v){
+  // Access control: non-admins can only access dashboard and their own team view
+  if(!isAdmin() && state.currentRole !== 'denied'){
+    const allowed = ['dashboard', state.currentTeam, 'lead-detail'];
+    if(!allowed.includes(v)){ toast('Access restricted to your team view.'); return; }
+  }
   state.view=v;
   document.querySelectorAll('[id^="view-"]').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-'+v).classList.remove('hidden');
@@ -1008,6 +1104,7 @@ function openEditLead(){
 }
 
 async function saveLead(){
+  if(isViewOnly()){ toast('View only access — cannot add leads.'); return; }
   const data=getLeadFormData();
   if(!data.name){toast('Name is required');return;}
   const{error}=await sb.from('leads').insert(data);
@@ -1016,6 +1113,7 @@ async function saveLead(){
 }
 
 async function updateLead(){
+  if(isViewOnly()){ toast('View only access — cannot edit leads.'); return; }
   const data=getLeadFormData();
   if(data.name===''&&!data.name){toast('Name is required');return;}
   const{error}=await sb.from('leads').update(data).eq('id',state.selectedLead);
@@ -1026,6 +1124,7 @@ async function updateLead(){
 }
 
 async function deleteLead(){
+  if(!isAdmin()){ toast('Only admins can delete leads.'); return; }
   if(!confirm('Delete this lead? Cannot be undone.'))return;
   await sb.from('lead_notes').delete().eq('lead_id',state.selectedLead);
   await sb.from('leads').delete().eq('id',state.selectedLead);
