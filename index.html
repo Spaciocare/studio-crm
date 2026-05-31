@@ -1345,8 +1345,14 @@ function showSettingsPanel(panel){
 }
 
 function renderSettingsPage(){
-  // Field toggles
-  document.getElementById('field-toggles').innerHTML=SECTIONS.map(sec=>`
+  renderFieldToggles();
+}
+
+
+function renderFieldToggles(){
+  const el = document.getElementById('field-toggles');
+  if(!el) return;
+  el.innerHTML=SECTIONS.map(sec=>`
     <div style="margin-bottom:16px;">
       <div style="font-size:11px;font-weight:700;color:#7F77DD;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">${sec.title}</div>
       ${sec.fields.map(f=>`
@@ -1355,17 +1361,78 @@ function renderSettingsPage(){
           <label class="toggle"><input type="checkbox" id="fv-${f.key}" ${state.fieldVisible[f.key]!==false?'checked':''} onchange="state.fieldVisible['${f.key}']=this.checked"><span class="toggle-slider"></span></label>
         </div>`).join('')}
     </div>`).join('');
+}
 
-  // Group settings
+function renderGroupSettings(){
+  const el = document.getElementById('group-settings');
+  if(!el) return;
   const groupNames={calling:'Calling Team',sales:'Sales & Architect Team',design:'Design Team',project:'Project Management Team'};
-  document.getElementById('group-settings').innerHTML=Object.entries(groupNames).map(([key,name])=>`
-    <div class="group-card">
-      <div class="group-title">${name}</div>
-      <div class="group-sub">Click fields to toggle them on/off for this team</div>
-      <div class="group-fields">
-        ${ALL_FIELDS.map(f=>`<span class="group-chip ${(state.groupFields[key]||[]).includes(f.key)?'on':''}" onclick="toggleGroupField('${key}','${f.key}',this)">${f.label}</span>`).join('')}
+  el.innerHTML = Object.entries(groupNames).map(([key,name])=>`
+    <div class="group-card" style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div>
+          <div class="group-title">${name}</div>
+          <div class="group-sub" style="margin-bottom:0;">Use ↑ ↓ to reorder · + to add · − to remove</div>
+        </div>
+        <span style="background:#EEEDFE;color:#3C3489;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:600;">${(state.groupFields[key]||[]).length} fields</span>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:#7F77DD;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Active fields — column order in team view</div>
+      <div style="border:1px solid #eee;border-radius:10px;overflow:hidden;margin-bottom:14px;">
+        ${(state.groupFields[key]||[]).length===0
+          ? `<div style="padding:16px;text-align:center;color:#ccc;font-size:12px;">No fields yet — add from below</div>`
+          : (state.groupFields[key]||[]).map((fkey,i,arr)=>{
+              const f=ALL_FIELDS.find(x=>x.key===fkey);
+              if(!f) return '';
+              const isFirst = i===0;
+              const isLast = i===arr.length-1;
+              return `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:${isLast?'none':'1px solid #f5f5f5'};background:#fff;">
+                <span style="color:#bbb;font-size:12px;min-width:22px;text-align:right;">${i+1}</span>
+                <span style="flex:1;font-size:13px;font-weight:500;color:#1a1a1a;">${f.label}</span>
+                <div style="display:flex;gap:4px;">
+                  <button onclick="moveGroupField('${key}','${fkey}',-1)" ${isFirst?'disabled':''} style="width:28px;height:28px;border:1px solid #ddd;border-radius:6px;background:${isFirst?'#fafafa':'#fff'};cursor:${isFirst?'not-allowed':'pointer'};color:${isFirst?'#ccc':'#555'};font-size:14px;line-height:1;font-family:inherit;">↑</button>
+                  <button onclick="moveGroupField('${key}','${fkey}',1)" ${isLast?'disabled':''} style="width:28px;height:28px;border:1px solid #ddd;border-radius:6px;background:${isLast?'#fafafa':'#fff'};cursor:${isLast?'not-allowed':'pointer'};color:${isLast?'#ccc':'#555'};font-size:14px;line-height:1;font-family:inherit;">↓</button>
+                  <button onclick="removeGroupField('${key}','${fkey}')" style="width:28px;height:28px;border:1px solid #F09595;border-radius:6px;background:#fff;cursor:pointer;color:#A32D2D;font-size:16px;font-weight:700;line-height:1;font-family:inherit;">−</button>
+                </div>
+              </div>`;
+            }).join('')
+        }
+      </div>
+      <div style="font-size:10px;font-weight:700;color:#aaa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Available fields — click + to add</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        ${ALL_FIELDS.filter(f=>!(state.groupFields[key]||[]).includes(f.key)).map(f=>
+          `<button onclick="addGroupField('${key}','${f.key}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;font-family:inherit;">
+            <span style="color:#7F77DD;font-weight:700;font-size:14px;">+</span> ${f.label}
+          </button>`
+        ).join('')}
+        ${ALL_FIELDS.filter(f=>!(state.groupFields[key]||[]).includes(f.key)).length===0?'<span style="font-size:12px;color:#aaa;">All fields active</span>':''}
       </div>
     </div>`).join('');
+}
+
+function moveGroupField(group, fieldKey, direction){
+  const arr = [...(state.groupFields[group]||[])];
+  const idx = arr.indexOf(fieldKey);
+  if(idx===-1) return;
+  const newIdx = idx + direction;
+  if(newIdx < 0 || newIdx >= arr.length) return;
+  arr.splice(idx, 1);
+  arr.splice(newIdx, 0, fieldKey);
+  state.groupFields[group] = arr;
+  renderGroupSettings();
+}
+
+function addGroupField(group, fieldKey){
+  const arr = state.groupFields[group]||[];
+  if(!arr.includes(fieldKey)){
+    arr.push(fieldKey);
+    state.groupFields[group] = arr;
+    renderGroupSettings();
+  }
+}
+
+function removeGroupField(group, fieldKey){
+  state.groupFields[group] = (state.groupFields[group]||[]).filter(k=>k!==fieldKey);
+  renderGroupSettings();
 }
 
 function toggleGroupField(group,fieldKey,el){
@@ -1373,7 +1440,6 @@ function toggleGroupField(group,fieldKey,el){
   const idx=arr.indexOf(fieldKey);
   if(idx>-1)arr.splice(idx,1);else arr.push(fieldKey);
   state.groupFields[group]=arr;
-  el.classList.toggle('on',arr.includes(fieldKey));
 }
 
 function saveSettings(){
