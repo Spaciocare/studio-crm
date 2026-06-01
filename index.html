@@ -278,9 +278,6 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
       <div class="topbar">
         <span class="topbar-title">All Leads</span>
         <div class="topbar-right">
-          <select class="filter-select" id="filter-status" onchange="renderLeads()"><option value="">All statuses</option><option>Hot</option><option>Warm</option><option>Cold</option><option>Won</option><option>Dead</option></select>
-          <select class="filter-select" id="filter-city" onchange="renderLeads()"><option value="">All cities</option></select>
-          <select class="filter-select" id="filter-source" onchange="renderLeads()"><option value="">All sources</option><option>Meta Ad</option><option>Referral</option></select>
           <button class="btn" onclick="exportCSV()"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
           <button class="btn" id="btn-import" onclick="openModal('import-leads')"><i class="ti ti-upload"></i> Import</button>
           <button class="btn btn-primary" id="btn-add-lead" onclick="openAddLead()"><i class="ti ti-plus"></i> Add lead</button>
@@ -904,14 +901,7 @@ function mkBar(id,labels,data){
 
 // ── LEADS TABLE ───────────────────────────────────────────────────────────
 function getFilteredLeads(){
-  let leads=state.leads;
-  const fs=document.getElementById('filter-status')?.value;
-  const fc=document.getElementById('filter-city')?.value;
-  const fsrc=document.getElementById('filter-source')?.value;
-  if(fs)leads=leads.filter(l=>l.final_lead_status===fs);
-  if(fc)leads=leads.filter(l=>l.city===fc);
-  if(fsrc)leads=leads.filter(l=>l.lead_source===fsrc);
-  return leads;
+  return [...state.leads].sort((a,b)=>(a.name||'').localeCompare(b.name||''));
 }
 
 function renderLeads(){
@@ -923,16 +913,22 @@ function renderLeads(){
     if(btnAdd) btnAdd.style.display = isViewOnly() ? 'none' : '';
   },0);
   const leads=getFilteredLeads();
-  const cols=['name','phone','city','lead_source','call_status','final_lead_status','quote_status','created_at'];
-  document.getElementById('leads-thead').innerHTML=cols.map(k=>`<th>${fieldLabel(k)}</th>`).join('')+'<th></th>';
+  // Show ALL enabled fields
+  const allCols = ALL_FIELDS
+    .filter(f=>state.fieldVisible[f.key]!==false && f.type!=='file')
+    .map(f=>f.key);
+  allCols.push('created_at');
+  document.getElementById('leads-thead').innerHTML=allCols.map(k=>`<th style="white-space:nowrap;min-width:100px;">${fieldLabel(k)}</th>`).join('')+'<th></th>';
   const tb=document.getElementById('leads-tbody');
-  if(!leads.length){tb.innerHTML=`<tr><td colspan="${cols.length+1}" class="empty">No leads found.</td></tr>`;return;}
+  if(!leads.length){tb.innerHTML=`<tr><td colspan="${allCols.length+1}" class="empty">No leads yet.</td></tr>`;return;}
   tb.innerHTML=leads.map(l=>`<tr class="clickable" onclick="openLead('${l.id}')">
-    ${cols.map(k=>{
-      if(k==='name')return`<td><div class="client-cell"><div class="avatar">${initials(l.name)}</div>${l.name||'—'}</div></td>`;
-      if(k==='created_at')return`<td>${fmtDate(l.created_at)}</td>`;
-      if(['final_lead_status','call_status','connected_call_status','quote_status'].includes(k))return`<td>${statusBadge(l[k],k)}</td>`;
-      return`<td>${l[k]||'—'}</td>`;
+    ${allCols.map(k=>{
+      const val=l[k]||'';
+      if(k==='name')return`<td style="white-space:nowrap;"><div class="client-cell"><div class="avatar">${initials(l.name)}</div><strong>${l.name||'—'}</strong></div></td>`;
+      if(k==='created_at')return`<td style="white-space:nowrap;">${fmtDate(l.created_at)}</td>`;
+      if(ALL_FIELDS.find(f=>f.key===k)?.type==='multiselect')return`<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(l[k]||[]).join(', ')||'—'}</td>`;
+      if(ALL_FIELDS.find(f=>f.key===k)?.type==='select'&&val)return`<td><span class="badge b-default" style="white-space:nowrap;">${val}</span></td>`;
+      return`<td style="white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${val||'—'}</td>`;
     }).join('')}
     <td><button class="btn btn-sm" onclick="event.stopPropagation();openLeadEdit('${l.id}')"><i class="ti ti-edit"></i></button></td>
   </tr>`).join('');
