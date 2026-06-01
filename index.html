@@ -839,9 +839,11 @@ function getDashLeads(leads){
   const to = toEl?.value;
   if(!from && !to) return leads;
   return leads.filter(l=>{
-    const d = l.created_at ? new Date(l.created_at) : null;
-    if(!d) return false;
-    const dStr = d.toISOString().slice(0,10);
+    // Use "Created Date" field (created_time) entered by user
+    // Fall back to system created_at if created_time not set
+    const dateVal = l.created_time || l.created_at;
+    if(!dateVal) return false;
+    const dStr = String(dateVal).slice(0,10); // get YYYY-MM-DD part
     if(from && dStr < from) return false;
     if(to && dStr > to) return false;
     return true;
