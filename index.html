@@ -2274,6 +2274,72 @@ function downloadTemplate(){
 
 
 
+
+// ── DRILL DOWN ────────────────────────────────────────────────────────────
+let drillLeads = [];
+let drillTitleText = '';
+
+function showDrillDown(title, leads){
+  if(!leads || !leads.length){ toast('No leads to show'); return; }
+  drillTitleText = title;
+  drillLeads = leads;
+  document.getElementById('drill-title').textContent = title + ' (' + leads.length + ')';
+
+  const cols = ['name','phone','city','lead_source','call_status','connected_call_status',
+    'floor_plan_status','final_lead_status','bd_team_lead_status','quote_status',
+    'payment_status','design_stage','final_design_stage','production_stage',
+    'execution_stage','final_project_stage','design_tat','created_time'];
+
+  const activeCols = cols.filter(k => k==='created_time' || ALL_FIELDS.find(f=>f.key===k));
+
+  const thead = `<tr>${activeCols.map(k=>`<th style="padding:8px 12px;background:#fafafa;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;border-bottom:1px solid #eee;white-space:nowrap;">${fieldLabel(k)}</th>`).join('')}</tr>`;
+
+  const tbody = leads.map(l=>`
+    <tr style="cursor:pointer;border-bottom:1px solid #f5f5f5;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''" onclick="openLead('${l.id}');closeAllModals();">
+      ${activeCols.map(k=>{
+        const val = l[k]||'';
+        if(k==='name') return `<td style="padding:8px 12px;white-space:nowrap;"><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="width:24px;height:24px;font-size:9px;">${initials(l.name)}</div><strong>${l.name||'—'}</strong></div></td>`;
+        const f = ALL_FIELDS.find(x=>x.key===k);
+        if(f?.type==='select' && val) return `<td style="padding:8px 12px;"><span style="background:#EEEDFE;color:#3C3489;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;">${val}</span></td>`;
+        return `<td style="padding:8px 12px;white-space:nowrap;font-size:12px;color:#555;">${val||'—'}</td>`;
+      }).join('')}
+    </tr>`).join('');
+
+  document.getElementById('drill-content').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>${thead}</thead>
+      <tbody>${tbody}</tbody>
+    </table>`;
+
+  openModal('drill-down');
+}
+
+function exportDrillDown(){
+  if(!drillLeads.length){ toast('No data to export'); return; }
+  const cols = ['name','phone','city','lead_source','call_status','connected_call_status',
+    'floor_plan_status','final_lead_status','bd_team_lead_status','quote_status',
+    'payment_status','design_stage','final_design_stage','production_stage',
+    'execution_stage','final_project_stage','design_tat','created_time'];
+  const headers = cols.map(k=>fieldLabel(k));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(drillLeads.map(l=>
+    cols.reduce((o,k,i)=>{ o[headers[i]]=Array.isArray(l[k])?(l[k]||[]).join('; '):(l[k]||''); return o; }, {})
+  ), {header: headers});
+  ws['!cols'] = headers.map(h=>({wch: Math.max(h.length+4, 14)}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+  XLSX.writeFile(wb, 'Spacioworks_'+drillTitleText.replace(/[^a-zA-Z0-9]/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('Exported!');
+}
+
+function handleBarClick(el){
+  let card = el;
+  while(card && !card.dataset.drillKey) card = card.parentElement;
+  if(!card) return;
+  const key = card.dataset.drillKey;
+  const val = card.dataset.drillVal;
+  showDrillDown(val, _dashLeads.filter(l=>(l[key]||'')===val));
+}
+
 init();
 
 // Drag and drop for import
