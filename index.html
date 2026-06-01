@@ -895,7 +895,7 @@ function barRows(obj, total, color, leadsArr, field){
   const max = entries[0][1];
   return entries.map(([k,v])=>{
     const clickable = leadsArr && field;
-    const clickAttr = clickable ? `data-drill-key="${field}" data-drill-val="${k}" onclick="handleBarClick(this)"  style="cursor:pointer;"` : '';
+    const clickAttr = clickable ? `data-drill-key="${field}" data-drill-val="${k}" style="cursor:pointer;"` : '';
     return `<div style="margin-bottom:10px;" ${clickAttr}>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
         <span style="color:#1a1a1a;font-weight:500;">${k}</span>
@@ -926,7 +926,7 @@ function sCard(label, value, sub, color, drillKey, drillVal){
   const clickable = drillKey !== undefined;
   const clickStyle = clickable ? 'cursor:pointer;border:1px solid #eee;transition:box-shadow .15s;' : '';
   const dataAttrs = clickable ? `data-drill-key="${drillKey}" data-drill-val="${drillVal||''}" data-drill-label="${label}"` : '';
-  return `<div class="stat-card drill-card" style="${clickStyle}" ${dataAttrs} onclick="handleStatCardClick(this)">
+  return `<div class="stat-card drill-card" style="${clickStyle}" ${dataAttrs}>
     <div class="stat-label">${label}</div>
     <div class="stat-val" style="color:${color||'#1a1a1a'};">${value}</div>
     ${sub?`<div class="stat-sub">${sub}</div>`:''}
@@ -935,22 +935,30 @@ function sCard(label, value, sub, color, drillKey, drillVal){
 }
 
 function handleStatCardClick(el){
-  const key = el.dataset.drillKey;
-  const val = el.dataset.drillVal;
-  const label = el.dataset.drillLabel;
+  // Walk up to find the drill-card element
+  let card = el;
+  while(card && !card.dataset.drillKey) card = card.parentElement;
+  if(!card) return;
+  const key = card.dataset.drillKey;
+  const val = card.dataset.drillVal;
+  const label = card.dataset.drillLabel;
   if(!key) return;
   if(key==='__all__'){
     showDrillDown(label, _dashLeads);
-  } else if(key==='__multi__'){
-    // val is JSON array
-    try{ const vals=JSON.parse(val); showDrillDown(label, _dashLeads.filter(l=>vals.includes(l[el.dataset.drillField]||''))); }catch(e){ showDrillDown(label, _dashLeads); }
   } else if(val && val.includes('%')){
-    // For payment status - match any % received
     showDrillDown(label, _dashLeads.filter(l=>l[key] && l[key].includes('%')));
   } else {
     showDrillDown(label, _dashLeads.filter(l=>(l[key]||'')===(val||'')));
   }
 }
+
+// Event delegation for dashboard drill-down clicks
+document.addEventListener('click', function(e){
+  const card = e.target.closest('.drill-card');
+  if(card && card.dataset.drillKey) handleStatCardClick(card);
+  const bar = e.target.closest('[data-drill-key]');
+  if(bar && !bar.classList.contains('drill-card')) handleBarClick(bar);
+});
 
 function cCard(title, content){
   return `<div class="chart-card"><div class="chart-title">${title}</div>${content}</div>`;
