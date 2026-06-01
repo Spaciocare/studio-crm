@@ -536,6 +536,7 @@ const SECTIONS=[
     {key:'connected_call_status',label:'Connected Call Status',type:'select',options:['','Lead Qualified','Lead Not Qualified','Call Back']},
     {key:'final_lead_status',label:'Final Lead Status',type:'select',options:['','Cold','Warm','Hot','Won','Dead']},
     {key:'floor_plan_status',label:'Floor Plan Status',type:'select',options:['','Received','Not Received','Yet to Share','Not Available']},
+    {key:'floor_plan_file',label:'Floor Plan File',type:'file'},
   ]},
   {title:'Sales & Architect Team',fields:[
     {key:'architect_call_date',label:'Architect Call Date',type:'date'},
@@ -576,7 +577,7 @@ const ALL_FIELDS=SECTIONS.flatMap(s=>s.fields);
 
 // Team group default field assignments
 const DEFAULT_GROUPS={
-  calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','floor_plan_status','comments'],
+  calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','floor_plan_status','floor_plan_file','comments'],
   sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','architect_call_date','architect_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','bd_team_lead_status','payment_status','final_lead_status','comments'],
   design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','design_tat','requirement_connect','design_stage','final_design_stage','final_quote_status','final_project_value','final_quoted_sqft','comments'],
   project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
@@ -802,6 +803,11 @@ function fmtVal(l,key){
   const f=ALL_FIELDS.find(x=>x.key===key);if(!f)return l[key]||'—';
   if(f.type==='multiselect')return(l[key]||[]).join(', ')||'—';
   if(f.type==='date'||f.type==='datetime-local')return fmtDate(l[key]);
+  if(f.type==='file'){
+    const url=l[key]||'';
+    if(!url) return '—';
+    return `<a href="${url}" target="_blank" style="color:#7F77DD;display:inline-flex;align-items:center;gap:4px;"><i class="ti ti-file-download"></i> View floor plan</a>`;
+  }
   if(['final_lead_status','call_status','connected_call_status','quote_status'].includes(key))return statusBadge(l[key],key);
   return l[key]||'—';
 }
@@ -1113,6 +1119,21 @@ function renderTeamView(team,title){
     // Read-only fields - never inline editable
     if(k==='name') return `<td style="padding:8px 12px;"><div class="client-cell"><div class="avatar">${initials(l.name)}</div><strong style="font-size:13px;">${l.name||'—'}</strong></div></td>`;
     if(k==='phone'||k==='email') return `<td style="padding:8px 12px;font-size:12px;">${l[k]||'—'}</td>`;
+    if(k==='floor_plan_file'){
+      const url = l[k]||'';
+      const name = url ? url.split('/').pop().split('?')[0] : '';
+      return `<td style="padding:6px 10px;" onclick="event.stopPropagation()">
+        ${url
+          ? `<a href="${url}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#7F77DD;text-decoration:none;border:1px solid #C5C2F6;border-radius:6px;padding:3px 8px;background:#EEEDFE;">
+              <i class="ti ti-file-download"></i> View file
+            </a>`
+          : `<label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#888;border:1px solid #ddd;border-radius:6px;padding:3px 8px;cursor:pointer;background:#fff;">
+              <i class="ti ti-upload"></i> Upload
+              <input type="file" accept="image/*,.pdf" style="display:none;" onchange="inlineFileUpload('${l.id}',this,'${team}')">
+            </label>`
+        }
+      </td>`;
+    }
     if(k==='design_tat') return `<td style="padding:8px 12px;"><span style="color:#7F77DD;font-weight:600;">${val||'—'}</span></td>`;
     if(f.type==='multiselect') return `<td style="padding:8px 12px;font-size:12px;color:#888;">${(l[k]||[]).slice(0,2).join(', ')||'—'}</td>`;
 
@@ -1165,6 +1186,19 @@ function renderTeamView(team,title){
         </tbody>
       </table>
     </div>`;
+}
+
+async function inlineFileUpload(leadId, input, team){
+  if(!input.files || !input.files[0]) return;
+  toast('Uploading...');
+  const url = await uploadFloorPlan(leadId, input);
+  if(!url) return;
+  const {error} = await sb.from('leads').update({floor_plan_file:url}).eq('id',leadId);
+  if(error){ toast('Error: '+error.message); return; }
+  const idx = state.leads.findIndex(x=>x.id===leadId);
+  if(idx>-1) state.leads[idx].floor_plan_file = url;
+  renderTeamView(team,'');
+  toast('✓ Floor plan uploaded!');
 }
 
 async function inlineSave(leadId, fieldKey, value, team){
@@ -1248,8 +1282,20 @@ function buildField(f,val=''){
   }else if(f.type==='multiselect'){
     input=`<div id="ms-${f.key}" class="multi-select">${(f.options||[]).map(o=>`<span class="ms-chip" data-val="${o}">${o}</span>`).join('')}</div>`;
   }else if(f.key==='design_tat'){
-    // Read-only auto-calculated field
     input=`<input id="lf-${f.key}" type="text" value="${val}" placeholder="Auto calculated" readonly style="background:#f5f4f0;color:#888;cursor:not-allowed;">`;
+  }else if(f.type==='file'){
+    // File upload field - show current file link + upload new
+    const fileUrl = val||'';
+    const fileName = fileUrl ? fileUrl.split('/').pop().split('?')[0] : '';
+    input=`<div id="lf-file-wrap-${f.key}">
+      ${fileUrl ? `<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+        <i class="ti ti-file" style="color:#7F77DD;"></i>
+        <a href="${fileUrl}" target="_blank" style="font-size:12px;color:#7F77DD;text-decoration:none;">${decodeURIComponent(fileName)}</a>
+        <span style="font-size:11px;color:#aaa;">(current)</span>
+      </div>` : ''}
+      <input id="lf-${f.key}" type="file" accept="image/*,.pdf" style="width:100%;font-size:12px;">
+      <div style="font-size:11px;color:#aaa;margin-top:3px;">Accepts images (JPG, PNG) and PDF. Max 10MB.</div>
+    </div>`;
   }else{
     input=`<input id="lf-${f.key}" type="${f.type}" value="${val}" placeholder="${f.placeholder||''}">`;
   }
@@ -1264,11 +1310,12 @@ function getLeadFormData(limitFields=null){
     if(f.type==='multiselect'){
       const container=document.getElementById('ms-'+f.key);
       if(container)data[f.key]=[...container.querySelectorAll('.ms-chip.selected')].map(c=>c.dataset.val);
+    }else if(f.type==='file'){
+      // File fields handled separately in saveLeadWithFiles/updateLeadWithFiles
     }else{
       const el=document.getElementById('lf-'+f.key);
       if(el){
         const val=el.value;
-        // Convert empty date/datetime fields to null to avoid DB type errors
         if((f.type==='date'||f.type==='datetime-local')&&val===''){
           data[f.key]=null;
         } else {
@@ -1292,17 +1339,36 @@ function openEditLead(){
   setTimeout(()=>buildLeadForm('lead-edit-body',l,limitFields),10);
 }
 
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────
+async function uploadFloorPlan(leadId, fileInput){
+  if(!fileInput || !fileInput.files || !fileInput.files[0]) return null;
+  const file = fileInput.files[0];
+  if(file.size > 10*1024*1024){ toast('File too large — max 10MB'); return null; }
+  const ext = file.name.split('.').pop();
+  const path = `floor-plans/${leadId}/${Date.now()}.${ext}`;
+  const { data, error } = await sb.storage.from('lead-files').upload(path, file, {upsert:true});
+  if(error){ toast('Upload error: '+error.message); return null; }
+  const { data: urlData } = sb.storage.from('lead-files').getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
 async function saveLead(){
   if(isViewOnly()){ toast('View only access — cannot add leads.'); return; }
   const data=getLeadFormData();
   if(!data.name){toast('Name is required');return;}
-  // Auto-set design_entry_date if payment status already set on creation
   if(['10% Received','20% Received','30% Received'].includes(data.payment_status)){
     data.design_entry_date = new Date().toISOString().slice(0,10);
     data.design_tat = '0 days';
   }
-  const{error}=await sb.from('leads').insert(data);
+  const{data:inserted, error}=await sb.from('leads').insert(data).select().single();
   if(error){toast('Error: '+error.message);return;}
+  // Upload floor plan if provided
+  const fileInput = document.getElementById('lf-floor_plan_file');
+  if(fileInput && fileInput.files && fileInput.files[0] && inserted){
+    toast('Uploading floor plan...');
+    const url = await uploadFloorPlan(inserted.id, fileInput);
+    if(url) await sb.from('leads').update({floor_plan_file:url}).eq('id',inserted.id);
+  }
   closeAllModals();toast('Lead added!');await loadAll();
 }
 
