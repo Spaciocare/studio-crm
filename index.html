@@ -895,7 +895,8 @@ function barRows(obj, total, color, leadsArr, field){
   const max = entries[0][1];
   return entries.map(([k,v])=>{
     const clickable = leadsArr && field;
-    const clickAttr = clickable ? `onclick="showDrillDown('${k}', drillFilter('${field}','${k}'))" style="cursor:pointer;"` : '';
+    const esc = k.replace(/'/g,"\\'");
+    const clickAttr = clickable ? `onclick="showDrillByField('${esc}', '${field}', '${esc}')" style="cursor:pointer;"` : '';
     return `<div style="margin-bottom:10px;" ${clickAttr}>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
         <span style="color:#1a1a1a;font-weight:500;">${k}</span>
@@ -911,7 +912,10 @@ function barRows(obj, total, color, leadsArr, field){
 // Store current dash leads for drill-down from bar rows
 let _dashLeads = [];
 function drillFilter(field, value){
-  return _dashLeads.filter(l=>l[field]===value);
+  return _dashLeads.filter(l=>(l[field]||'')===value);
+}
+function showDrillByField(title, field, value){
+  showDrillDown(title, _dashLeads.filter(l=>(l[field]||'')===value));
 }
 
 function sCard(label, value, sub, color, onclick){
@@ -945,8 +949,8 @@ function renderDashboard(){
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
         ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', `showDrillDown('All Leads', getDashLeads(state.leads))`)}
-        ${sCard('Connected', connected, total?Math.round(connected/total*100)+'% of total':'0%', '#1D9E75', `showDrillDown('Connected Leads', getDashLeads(state.leads).filter(l=>l.call_status==='Connected'))`)}
-        ${sCard('Lead Qualified', qualified, total?Math.round(qualified/total*100)+'% of total':'0%', '#7F77DD', `showDrillDown('Lead Qualified', getDashLeads(state.leads).filter(l=>l.connected_call_status==='Lead Qualified'))`)}
+        ${sCard('Connected', connected, total?Math.round(connected/total*100)+'% of total':'0%', '#1D9E75', "showDrillByField(\'Connected Leads\', \'call_status\', \'Connected\')")}
+        ${sCard('Lead Qualified', qualified, total?Math.round(qualified/total*100)+'% of total':'0%', '#7F77DD', "showDrillByField(\'Lead Qualified\', \'connected_call_status\', \'Lead Qualified\')")}
         ${sCard('Floor Plan Received', fpReceived, total?Math.round(fpReceived/total*100)+'% of total':'0%', '#BA7517', `showDrillDown('Floor Plan Received', getDashLeads(state.leads).filter(l=>l.floor_plan_status==='Received'))}`)}
       </div>
       <div class="dash-grid-2">
@@ -967,9 +971,9 @@ function renderDashboard(){
     const paymentCollected = leads.filter(l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)).length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', `showDrillDown('BDI Leads', leads)`  )}
-        ${sCard('Requirements Collected', reqCollected, total?Math.round(reqCollected/total*100)+'% of total':'0%', '#7F77DD', `showDrillDown('Requirements Collected', leads.filter(l=>l.architect_call_status==='Requirement Collected'))`)}
-        ${sCard('Quotes Sent', quoted, total?Math.round(quoted/total*100)+'% of total':'0%', '#1D9E75', `showDrillDown('Quotes Sent', leads.filter(l=>['Quoted','Quote Accepted'].includes(l.quote_status)))`)}
+        ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', 'showDrillDown(\'BDI Leads\', _dashLeads)')}
+        ${sCard('Requirements Collected', reqCollected, total?Math.round(reqCollected/total*100)+'% of total':'0%', '#7F77DD', "showDrillByField(\'Requirements Collected\', \'architect_call_status\', \'Requirement Collected\')")}
+        ${sCard('Quotes Sent', quoted, total?Math.round(quoted/total*100)+'% of total':'0%', '#1D9E75', 'showDrillDown(\'Quotes Sent\', _dashLeads.filter(l=>[\"Quoted\",\"Quote Accepted\"].includes(l.quote_status)))')}
         ${sCard('Payment Collected', paymentCollected, total?Math.round(paymentCollected/total*100)+'% of total':'0%', '#D85A30', `showDrillDown('Payment Collected', leads.filter(l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)))}`)}
       </div>
       <div class="dash-grid-2">
@@ -992,8 +996,8 @@ function renderDashboard(){
     tats.forEach(d=>{ if(d<=7)tatRanges['1-7 days']++; else if(d<=14)tatRanges['8-14 days']++; else if(d<=21)tatRanges['15-21 days']++; else if(d<=30)tatRanges['22-30 days']++; else tatRanges['30+ days']++; });
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', `showDrillDown('Design Team Leads', leads)`  )}
-        ${sCard('Design Completed', completed, total?Math.round(completed/total*100)+'% of total':'0%', '#1D9E75', `showDrillDown('Design Completed', leads.filter(l=>l.final_design_stage==='Design Completed'))`)}
+        ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', 'showDrillDown(\'Design Team Leads\', _dashLeads)')}
+        ${sCard('Design Completed', completed, total?Math.round(completed/total*100)+'% of total':'0%', '#1D9E75', "showDrillByField(\'Design Completed\', \'final_design_stage\', \'Design Completed\')")}
         ${sCard('Avg Design TAT', avgTat ? avgTat+' days' : '—', 'Across all tracked leads', '#7F77DD')}
         ${sCard('Req Connect Done', leads.filter(l=>l.requirement_connect==='Completed').length, '', '#BA7517', `showDrillDown('Requirement Connect Done', leads.filter(l=>l.requirement_connect==='Completed'))}`)}
       </div>
@@ -1015,9 +1019,9 @@ function renderDashboard(){
     const prodDone = leads.filter(l=>l.production_stage==='Production Completed').length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Projects', total, getDateRangeLabel(), '#1a1a1a', `showDrillDown('All Projects', leads)`  )}
-        ${sCard('Handed Over', handedOver, total?Math.round(handedOver/total*100)+'% complete':'0%', '#1D9E75', `showDrillDown('Handed Over', leads.filter(l=>l.final_project_stage==='Handover Certificate is Given'))`)}
-        ${sCard('In Execution', inExecution, 'Currently installing', '#7F77DD', `showDrillDown('In Execution', leads.filter(l=>l.execution_stage==='Installation In-Progress'))`)}
+        ${sCard('Total Projects', total, getDateRangeLabel(), '#1a1a1a', 'showDrillDown(\'All Projects\', _dashLeads)')}
+        ${sCard('Handed Over', handedOver, total?Math.round(handedOver/total*100)+'% complete':'0%', '#1D9E75', "showDrillByField(\'Handed Over\', \'final_project_stage\', \'Handover Certificate is Given\')")}
+        ${sCard('In Execution', inExecution, 'Currently installing', '#7F77DD', "showDrillByField(\'In Execution\', \'execution_stage\', \'Installation In-Progress\')")}
         ${sCard('Production Done', prodDone, '', '#BA7517', `showDrillDown('Production Completed', leads.filter(l=>l.production_stage==='Production Completed'))}`)}
       </div>
       <div class="dash-grid-2">
