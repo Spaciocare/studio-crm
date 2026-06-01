@@ -1197,7 +1197,11 @@ async function inlineFileUpload(leadId, input, team){
   if(error){ toast('Error: '+error.message); return; }
   const idx = state.leads.findIndex(x=>x.id===leadId);
   if(idx>-1) state.leads[idx].floor_plan_file = url;
+  const contentEl2 = document.getElementById(team+'-content');
+  const scrollParent2 = contentEl2 ? contentEl2.closest('.content') : null;
+  const scrollTop2 = scrollParent2 ? scrollParent2.scrollTop : 0;
   renderTeamView(team,'');
+  if(scrollParent2) requestAnimationFrame(()=>{ scrollParent2.scrollTop = scrollTop2; });
   toast('✓ Floor plan uploaded!');
 }
 
@@ -1230,9 +1234,20 @@ async function inlineSave(leadId, fieldKey, value, team){
   const {error} = await sb.from('leads').update(data).eq('id',leadId);
   if(error){ toast('Error: '+error.message); return; }
 
+  // Update local state immediately
   const idx = state.leads.findIndex(x=>x.id===leadId);
   if(idx>-1) Object.assign(state.leads[idx], data);
+
+  // Save scroll position before re-render
+  const contentEl = document.getElementById(team+'-content');
+  const scrollParent = contentEl ? contentEl.closest('.content') : null;
+  const scrollTop = scrollParent ? scrollParent.scrollTop : 0;
+
   renderTeamView(team,'');
+
+  // Restore scroll position after re-render
+  if(scrollParent) requestAnimationFrame(()=>{ scrollParent.scrollTop = scrollTop; });
+
   toast('✓ Saved');
 }
 
