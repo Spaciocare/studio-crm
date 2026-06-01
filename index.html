@@ -249,7 +249,7 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
     <div class="nav-section">
       <div class="nav-section-label">Teams</div>
       <div class="nav-item" data-view="calling" onclick="switchView('calling')"><i class="ti ti-phone"></i> Calling Team</div>
-      <div class="nav-item" data-view="sales" onclick="switchView('sales')"><i class="ti ti-building"></i> Sales & Architect</div>
+      <div class="nav-item" data-view="sales" onclick="switchView('sales')"><i class="ti ti-building"></i> BDI Team</div>
       <div class="nav-item" data-view="design" onclick="switchView('design')"><i class="ti ti-pencil"></i> Design Team</div>
       <div class="nav-item" data-view="project" onclick="switchView('project')"><i class="ti ti-hammer"></i> Project Mgmt</div>
     </div>
@@ -316,7 +316,7 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
       <div class="content" id="calling-content"></div>
     </div>
     <div id="view-sales" class="hidden">
-      <div class="topbar"><span class="topbar-title"><i class="ti ti-building" style="margin-right:6px;"></i>Sales & Architect View</span></div>
+      <div class="topbar"><span class="topbar-title"><i class="ti ti-building" style="margin-right:6px;"></i>BDI Team View</span></div>
       <div class="content" id="sales-content"></div>
     </div>
     <div id="view-design" class="hidden">
@@ -435,7 +435,7 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
       <div class="mfield"><label>Team / Group</label>
         <select id="u-team">
           <option value="calling">Calling Team</option>
-          <option value="sales">Sales & Architect Team</option>
+          <option value="sales">BDI Team</option>
           <option value="design">Design Team</option>
           <option value="project">Project Management Team</option>
           <option value="admin">Admin (Full Access)</option>
@@ -467,7 +467,7 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
       <div class="mfield"><label>Team / Group</label>
         <select id="eu-team">
           <option value="calling">Calling Team</option>
-          <option value="sales">Sales & Architect Team</option>
+          <option value="sales">BDI Team</option>
           <option value="design">Design Team</option>
           <option value="project">Project Management Team</option>
           <option value="admin">Admin (Full Access)</option>
@@ -538,7 +538,7 @@ const SECTIONS=[
     {key:'floor_plan_status',label:'Floor Plan Status',type:'select',options:['','Received','Not Received','Yet to Share','Not Available']},
     {key:'floor_plan_file',label:'Floor Plan File',type:'file'},
   ]},
-  {title:'Sales & Architect Team',fields:[
+  {title:'BDI Team',fields:[
     {key:'architect_call_date',label:'Architect Call Date',type:'date'},
     {key:'architect_call_status',label:'Architect Call Status',type:'select',options:['','Requirement Collected','Not Connected','Partially Collected']},
     {key:'requirements',label:'Requirements',type:'multiselect',options:['Foyer','TV Unit','Sofa wall','False Ceiling','Crockery Unit','Pooja Unit','Wardrobes','Vanity Unit','Others']},
@@ -766,7 +766,7 @@ function renderCurrent(){
   else if(v==='lead-detail')renderLeadDetail();
   else if(v==='pipeline')renderPipeline();
   else if(v==='calling')renderTeamView('calling','Calling Team');
-  else if(v==='sales')renderTeamView('sales','Sales & Architect');
+  else if(v==='sales')renderTeamView('sales','BDI Team');
   else if(v==='design')renderTeamView('design','Design Team');
   else if(v==='project')renderTeamView('project','Project Management');
   else if(v==='settings')renderSettingsPage();
@@ -965,7 +965,7 @@ function renderLeadDetail(){
   // Stage progress bar
   const stages=[
     {key:'calling',label:'Calling',check:l=>true,done:l=>l.connected_call_status==='Lead Qualified'},
-    {key:'sales',label:'Sales & Architect',check:l=>l.connected_call_status==='Lead Qualified'&&['Received','Not Available'].includes(l.floor_plan_status),done:l=>l.quote_status==='30% Payment Collected'},
+    {key:'sales',label:'BDI Team',check:l=>l.connected_call_status==='Lead Qualified'&&['Received','Not Available'].includes(l.floor_plan_status),done:l=>l.quote_status==='30% Payment Collected'},
     {key:'design',label:'Design',check:l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)||l.quote_status==='30% Payment Collected',done:l=>l.final_design_stage==='Design Completed'},
     {key:'project',label:'Project Mgmt',check:l=>l.final_design_stage==='Design Completed',done:l=>l.final_project_stage==='Handover Certificate is Given'},
   ];
@@ -1086,7 +1086,7 @@ function renderTeamView(team,title){
   if(!fields.length){el.innerHTML=`<div class="empty">No fields assigned to this team. Go to Settings → Team groups.</div>`;return;}
 
   const gateInfo={
-    calling:{color:'#E6F1FB',text:'#0C447C',msg:'Shows all leads. Leads move to Sales & Architect when Connected Call Status = <strong>Lead Qualified</strong> AND Floor Plan Status = <strong>Received</strong> or <strong>Not Available</strong>'},
+    calling:{color:'#E6F1FB',text:'#0C447C',msg:'Shows all leads. Leads move to BDI Team when Connected Call Status = <strong>Lead Qualified</strong> AND Floor Plan Status = <strong>Received</strong> or <strong>Not Available</strong>'},
     sales:{color:'#EAF3DE',text:'#27500A',msg:'Leads where Connected Call Status = <strong>Lead Qualified</strong> AND Floor Plan Status = <strong>Received / Not Available</strong>. Move to Design when Payment Status is set'},
     design:{color:'#EEEDFE',text:'#3C3489',msg:'Leads where Payment Status = <strong>10%/20%/30% Received</strong>. Move to Project Mgmt when Final Design Stage = <strong>Design Completed</strong>'},
     project:{color:'#FAEEDA',text:'#633806',msg:'Leads where Final Design Stage = <strong>Design Completed</strong>'},
@@ -1432,7 +1432,7 @@ function renderFieldToggles(){
 function renderGroupSettings(){
   const el = document.getElementById('group-settings');
   if(!el) return;
-  const groupNames={calling:'Calling Team',sales:'Sales & Architect Team',design:'Design Team',project:'Project Management Team'};
+  const groupNames={calling:'Calling Team',sales:'BDI Team',design:'Design Team',project:'Project Management Team'};
   el.innerHTML = Object.entries(groupNames).map(([key,name])=>`
     <div class="group-card" style="margin-bottom:24px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -1580,7 +1580,7 @@ function toast(msg){let t=document.getElementById('toast-el');if(!t){t=document.
 let editingUserId = null;
 
 const TEAM_LABELS = {
-  calling:'Calling Team', sales:'Sales & Architect', design:'Design Team',
+  calling:'Calling Team', sales:'BDI Team', design:'Design Team',
   project:'Project Mgmt', admin:'Admin'
 };
 const ACCESS_LABELS = {edit:'Editor',view:'View only',admin:'Admin'};
