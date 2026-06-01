@@ -570,8 +570,8 @@ const SECTIONS=[
     {key:'floor_plan_file',label:'Floor Plan File',type:'file'},
   ]},
   {title:'BDI Team',fields:[
-    {key:'architect_call_date',label:'Architect Call Date',type:'date'},
-    {key:'architect_call_status',label:'Architect Call Status',type:'select',options:['','Requirement Collected','Not Connected','Partially Collected']},
+    {key:'bdi_call_date',label:'BDI Call Date',type:'date'},
+    {key:'bdi_call_status',label:'BDI Call Status',type:'select',options:['','Requirement Collected','Not Connected','Partially Collected']},
     {key:'requirements',label:'Requirements',type:'multiselect',options:['Foyer','TV Unit','Sofa wall','False Ceiling','Crockery Unit','Pooja Unit','Wardrobes','Vanity Unit','Others']},
     {key:'requirement_comment',label:'Requirement Comment',type:'textarea'},
     {key:'quote_status',label:'Quote Status',type:'select',options:['','Yet to Prepare','Quoted','Quote Accepted','Quote Rejected']},
@@ -609,7 +609,7 @@ const ALL_FIELDS=SECTIONS.flatMap(s=>s.fields);
 // Team group default field assignments
 const DEFAULT_GROUPS={
   calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','floor_plan_status','floor_plan_file','comments'],
-  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','architect_call_date','architect_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','bd_team_lead_status','payment_status','final_lead_status','comments'],
+  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','bdi_call_date','bdi_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','bd_team_lead_status','payment_status','final_lead_status','comments'],
   design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','design_tat','requirement_connect','design_stage','final_design_stage','final_quote_status','final_project_value','final_quoted_sqft','comments'],
   project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
 };
@@ -997,19 +997,19 @@ function renderDashboard(){
     const leads = getDashLeads(getTeamLeads('sales'));
     _dashLeads = leads;
     const total = leads.length;
-    const reqCollected = leads.filter(l=>l.architect_call_status==='Requirement Collected').length;
+    const reqCollected = leads.filter(l=>l.bdi_call_status==='Requirement Collected').length;
     const quoted = leads.filter(l=>['Quoted','Quote Accepted'].includes(l.quote_status)).length;
     const paymentCollected = leads.filter(l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)).length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
         ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', '__all__', '')}
-        ${sCard('Requirements Collected', reqCollected, total?Math.round(reqCollected/total*100)+'% of total':'0%', '#7F77DD', 'architect_call_status', 'Requirement Collected')}
+        ${sCard('Requirements Collected', reqCollected, total?Math.round(reqCollected/total*100)+'% of total':'0%', '#7F77DD', 'bdi_call_status', 'Requirement Collected')}
         ${sCard('Quotes Sent', quoted, total?Math.round(quoted/total*100)+'% of total':'0%', '#1D9E75', 'quote_status', 'Quoted')}
         ${sCard('Payment Collected', paymentCollected, total?Math.round(paymentCollected/total*100)+'% of total':'0%', '#D85A30', 'payment_status', '% Received')}
       </div>
       <div class="dash-grid-2">
         ${cCard('Quote Status', barRows(countBy(leads,'quote_status'), total, '#1D9E75', leads, 'quote_status'))}
-        ${cCard('Architect Call Status', barRows(countBy(leads,'architect_call_status'), total, '#7F77DD', leads, 'architect_call_status'))}
+        ${cCard('BDI Call Status', barRows(countBy(leads,'bdi_call_status'), total, '#7F77DD', leads, 'bdi_call_status'))}
       </div>
       <div class="dash-grid-2">
         ${cCard('Payment Status', barRows(countBy(leads,'payment_status'), total, '#BA7517', leads, 'payment_status'))}
@@ -2142,8 +2142,8 @@ function processImportRows(rows){
       'Call Status':'call_status',
       'Connected Call Status':'connected_call_status',
       'Final Lead Status':'final_lead_status',
-      'Architect Call Date':'architect_call_date',
-      'Architect Call Status':'architect_call_status',
+      'BDI Call Date':'bdi_call_date',
+      'BDI Call Status':'bdi_call_status',
       'Requirements':'requirements',
       'Requirement Comment':'requirement_comment',
       'Quote Status':'quote_status',
