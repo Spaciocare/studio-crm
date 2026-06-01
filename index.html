@@ -623,7 +623,22 @@ function loadSettings(){
     if(fv)state.fieldVisible=JSON.parse(fv);
     else{ALL_FIELDS.forEach(f=>{state.fieldVisible[f.key]=true;});saveSettings();}
     const gf=localStorage.getItem('crm_gf');
-    if(gf)state.groupFields=JSON.parse(gf);
+    if(gf){
+      state.groupFields=JSON.parse(gf);
+      // Migrate old architect field keys to new bdi field keys
+      const keyMap={'architect_call_date':'bdi_call_date','architect_call_status':'bdi_call_status'};
+      Object.keys(state.groupFields).forEach(team=>{
+        state.groupFields[team]=state.groupFields[team].map(k=>keyMap[k]||k);
+      });
+      // Also migrate fieldVisible
+      Object.keys(keyMap).forEach(oldKey=>{
+        if(state.fieldVisible[oldKey]!==undefined){
+          state.fieldVisible[keyMap[oldKey]]=state.fieldVisible[oldKey];
+          delete state.fieldVisible[oldKey];
+        }
+      });
+      saveSettings_store();
+    }
   }catch(e){ALL_FIELDS.forEach(f=>{state.fieldVisible[f.key]=true;});}
 }
 function saveSettings(){
