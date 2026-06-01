@@ -269,7 +269,17 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
   <div class="main">
     <!-- DASHBOARD -->
     <div id="view-dashboard">
-      <div class="topbar"><span class="topbar-title">Dashboard</span><div class="topbar-right"><select class="filter-select" id="dash-period" onchange="renderDashboard()"><option value="30">Last 30 days</option><option value="7">Last 7 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select></div></div>
+      <div class="topbar">
+        <span class="topbar-title">Dashboard</span>
+        <div class="topbar-right">
+          <div style="display:flex;gap:4px;background:#f5f4f0;border-radius:10px;padding:4px;">
+            <button id="tab-calling" onclick="setDashTab('calling')" class="dash-tab active" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:#1a1a1a;color:#fff;">Calling</button>
+            <button id="tab-bdi" onclick="setDashTab('bdi')" class="dash-tab" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:transparent;color:#888;">BDI Team</button>
+            <button id="tab-design" onclick="setDashTab('design')" class="dash-tab" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:transparent;color:#888;">Design</button>
+            <button id="tab-project" onclick="setDashTab('project')" class="dash-tab" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:transparent;color:#888;">Project Mgmt</button>
+          </div>
+        </div>
+      </div>
       <div class="content" id="dashboard-content"></div>
     </div>
 
