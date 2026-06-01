@@ -1822,11 +1822,32 @@ function saveSettings_store(){localStorage.setItem('crm_fv',JSON.stringify(state
 
 function exportCSV(){
   const leads=getFilteredLeads();
-  // Export ALL fields regardless of visibility toggle
-  const keys=ALL_FIELDS.filter(f=>f.type!=='file').map(f=>f.key);
-  const headers=ALL_FIELDS.filter(f=>f.type!=='file').map(f=>f.label);
+  const allFields=ALL_FIELDS.filter(f=>f.type!=='file');
+  const keys=allFields.map(f=>f.key);
+  const headers=allFields.map(f=>f.label);
 
-  // Build rows array
+  // Brand colors (Spacioworks gold & black theme)
+  // Section color map - group headers by section
+  const sectionColors={
+    'Lead Info':       {fgColor:{rgb:'C9A84C'}, bgColor:{rgb:'1A1A1A'}},  // Gold on Black
+    'Property Details':{fgColor:{rgb:'FFFFFF'}, bgColor:{rgb:'3C3489'}},  // White on Purple
+    'Contact Info':    {fgColor:{rgb:'1A1A1A'}, bgColor:{rgb:'C9A84C'}},  // Black on Gold
+    'Calling Team':    {fgColor:{rgb:'FFFFFF'}, bgColor:{rgb:'0C447C'}},  // White on Blue
+    'Sales & Architect':{fgColor:{rgb:'FFFFFF'},bgColor:{rgb:'27500A'}},  // White on Green
+    'Quote & Project': {fgColor:{rgb:'FFFFFF'}, bgColor:{rgb:'633806'}},  // White on Orange
+    'Design Team':     {fgColor:{rgb:'FFFFFF'}, bgColor:{rgb:'4A1B0C'}},  // White on Brown
+    'Project Management':{fgColor:{rgb:'FFFFFF'},bgColor:{rgb:'444441'}}, // White on Grey
+    'General':         {fgColor:{rgb:'FFFFFF'}, bgColor:{rgb:'555555'}},  // White on Dark grey
+  };
+
+  // Map each field key to its section color
+  const fieldColorMap={};
+  SECTIONS.forEach(sec=>{
+    const color = sectionColors[sec.title] || sectionColors['General'];
+    sec.fields.forEach(f=>{ if(f.type!=='file') fieldColorMap[f.key]=color; });
+  });
+
+  // Build data rows
   const rows=leads.map(l=>
     keys.reduce((obj,k,i)=>{
       obj[headers[i]]=Array.isArray(l[k])?(l[k]||[]).join('; '):(l[k]||'');
@@ -1834,30 +1855,63 @@ function exportCSV(){
     },{})
   );
 
-  // Create workbook
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.json_to_sheet(rows,{header:headers});
 
-  // Style header row width
-  const colWidths=headers.map(h=>({wch:Math.max(h.length+4,16)}));
-  ws['!cols']=colWidths;
+  // Style each header cell
+  headers.forEach((h,i)=>{
+    const cellRef=XLSX.utils.encode_cell({r:0,c:i});
+    if(!ws[cellRef]) return;
+    const fKey=allFields[i]?.key;
+    const color=fieldColorMap[fKey]||{fgColor:{rgb:'FFFFFF'},bgColor:{rgb:'1A1A1A'}};
+    ws[cellRef].s={
+      font:{bold:true,color:{rgb:color.fgColor.rgb},sz:11},
+      fill:{patternType:'solid',fgColor:{rgb:color.bgColor.rgb}},
+      alignment:{horizontal:'center',vertical:'center',wrapText:true},
+      border:{
+        bottom:{style:'medium',color:{rgb:color.bgColor.rgb}},
+      }
+    };
+  });
+
+  // Style data rows with alternating light background
+  leads.forEach((l,ri)=>{
+    headers.forEach((h,ci)=>{
+      const cellRef=XLSX.utils.encode_cell({r:ri+1,c:ci});
+      if(!ws[cellRef]) return;
+      ws[cellRef].s={
+        fill:{patternType:'solid',fgColor:{rgb: ri%2===0 ? 'FFFFFF' : 'F9F7F0'}},
+        alignment:{vertical:'center',wrapText:false},
+        font:{sz:10}
+      };
+    });
+  });
+
+  // Set row height for header
+  ws['!rows']=[{hpt:24}];
+
+  // Set column widths
+  ws['!cols']=headers.map(h=>({wch:Math.max(h.length+4,16)}));
 
   XLSX.utils.book_append_sheet(wb,ws,'Leads');
 
-  // Add summary sheet
+  // Summary sheet with brand styling
   const now=new Date();
   const statusCounts={};
   leads.forEach(l=>{const s=l.final_lead_status||'Unknown';statusCounts[s]=(statusCounts[s]||0)+1;});
-  const summaryRows=[
+  const summaryData=[
     {'Metric':'Export date','Value':now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})},
     {'Metric':'Total leads exported','Value':leads.length},
     ...Object.entries(statusCounts).map(([s,v])=>({'Metric':s+' leads','Value':v})),
   ];
-  const ws2=XLSX.utils.json_to_sheet(summaryRows);
-  ws2['!cols']=[{wch:28},{wch:20}];
+  const ws2=XLSX.utils.json_to_sheet(summaryData);
+  // Style summary header
+  ['A1','B1'].forEach(ref=>{
+    if(ws2[ref]) ws2[ref].s={font:{bold:true,color:{rgb:'C9A84C'},sz:11},fill:{patternType:'solid',fgColor:{rgb:'1A1A1A'}},alignment:{horizontal:'center'}};
+  });
+  ws2['!cols']=[{wch:30},{wch:22}];
   XLSX.utils.book_append_sheet(wb,ws2,'Summary');
 
-  // Download
   const filename='Spacioworks_Leads_'+now.toISOString().slice(0,10)+'.xlsx';
   XLSX.writeFile(wb,filename);
   toast('Exported '+leads.length+' leads to Excel!');
