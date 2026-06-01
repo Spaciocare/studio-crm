@@ -1822,8 +1822,9 @@ function saveSettings_store(){localStorage.setItem('crm_fv',JSON.stringify(state
 
 function exportCSV(){
   const leads=getFilteredLeads();
-  const keys=ALL_FIELDS.filter(f=>state.fieldVisible[f.key]).map(f=>f.key);
-  const headers=ALL_FIELDS.filter(f=>state.fieldVisible[f.key]).map(f=>f.label);
+  // Export ALL fields regardless of visibility toggle
+  const keys=ALL_FIELDS.filter(f=>f.type!=='file').map(f=>f.key);
+  const headers=ALL_FIELDS.filter(f=>f.type!=='file').map(f=>f.label);
 
   // Build rows array
   const rows=leads.map(l=>
