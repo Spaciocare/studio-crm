@@ -269,9 +269,16 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
   <div class="main">
     <!-- DASHBOARD -->
     <div id="view-dashboard">
-      <div class="topbar">
+      <div class="topbar" style="flex-wrap:wrap;gap:8px;">
         <span class="topbar-title">Dashboard</span>
-        <div class="topbar-right">
+        <div class="topbar-right" style="flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label style="font-size:12px;color:#888;font-weight:500;">From</label>
+            <input type="date" id="dash-from" onchange="renderDashboard()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;font-size:12px;font-family:inherit;outline:none;color:#1a1a1a;">
+            <label style="font-size:12px;color:#888;font-weight:500;">To</label>
+            <input type="date" id="dash-to" onchange="renderDashboard()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;font-size:12px;font-family:inherit;outline:none;color:#1a1a1a;">
+            <button onclick="clearDashDates()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;color:#888;cursor:pointer;font-family:inherit;">Clear</button>
+          </div>
           <div style="display:flex;gap:4px;background:#f5f4f0;border-radius:10px;padding:4px;">
             <button id="tab-calling" onclick="setDashTab('calling')" class="dash-tab active" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:#1a1a1a;color:#fff;">Calling</button>
             <button id="tab-bdi" onclick="setDashTab('bdi')" class="dash-tab" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:transparent;color:#888;">BDI Team</button>
@@ -817,6 +824,40 @@ function fmtVal(l,key){
 // ── DASHBOARD ─────────────────────────────────────────────────────────────
 let dashTab = 'calling';
 
+function clearDashDates(){
+  const f = document.getElementById('dash-from');
+  const t = document.getElementById('dash-to');
+  if(f) f.value = '';
+  if(t) t.value = '';
+  renderDashboard();
+}
+
+function getDashLeads(leads){
+  const fromEl = document.getElementById('dash-from');
+  const toEl = document.getElementById('dash-to');
+  const from = fromEl?.value;
+  const to = toEl?.value;
+  if(!from && !to) return leads;
+  return leads.filter(l=>{
+    const d = l.created_at ? new Date(l.created_at) : null;
+    if(!d) return false;
+    const dStr = d.toISOString().slice(0,10);
+    if(from && dStr < from) return false;
+    if(to && dStr > to) return false;
+    return true;
+  });
+}
+
+function getDateRangeLabel(){
+  const from = document.getElementById('dash-from')?.value;
+  const to = document.getElementById('dash-to')?.value;
+  if(!from && !to) return 'All time';
+  if(from && to) return `${fmtDate(from)} – ${fmtDate(to)}`;
+  if(from) return `From ${fmtDate(from)}`;
+  if(to) return `Up to ${fmtDate(to)}`;
+  return '';
+}
+
 function setDashTab(tab){
   dashTab = tab;
   document.querySelectorAll('.dash-tab').forEach(b=>{
@@ -860,14 +901,14 @@ function renderDashboard(){
   if(!el) return;
 
   if(dashTab==='calling'){
-    const leads = state.leads;
+    const leads = getDashLeads(state.leads);
     const total = leads.length;
     const connected = leads.filter(l=>l.call_status==='Connected').length;
     const qualified = leads.filter(l=>l.connected_call_status==='Lead Qualified').length;
     const fpReceived = leads.filter(l=>l.floor_plan_status==='Received').length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Leads', total, 'All leads in system')}
+        ${sCard('Total Leads', total, getDateRangeLabel())}
         ${sCard('Connected', connected, total?Math.round(connected/total*100)+'% of total':'0%', '#1D9E75')}
         ${sCard('Lead Qualified', qualified, total?Math.round(qualified/total*100)+'% of total':'0%', '#7F77DD')}
         ${sCard('Floor Plan Received', fpReceived, total?Math.round(fpReceived/total*100)+'% of total':'0%', '#BA7517')}
@@ -882,14 +923,14 @@ function renderDashboard(){
       </div>`;
 
   } else if(dashTab==='bdi'){
-    const leads = getTeamLeads('sales');
+    const leads = getDashLeads(getTeamLeads('sales'));
     const total = leads.length;
     const reqCollected = leads.filter(l=>l.architect_call_status==='Requirement Collected').length;
     const quoted = leads.filter(l=>['Quoted','Quote Accepted'].includes(l.quote_status)).length;
     const paymentCollected = leads.filter(l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)).length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Leads', total, 'Qualified leads in BDI')}
+        ${sCard('Total Leads', total, getDateRangeLabel())}
         ${sCard('Requirements Collected', reqCollected, total?Math.round(reqCollected/total*100)+'% of total':'0%', '#7F77DD')}
         ${sCard('Quotes Sent', quoted, total?Math.round(quoted/total*100)+'% of total':'0%', '#1D9E75')}
         ${sCard('Payment Collected', paymentCollected, total?Math.round(paymentCollected/total*100)+'% of total':'0%', '#D85A30')}
@@ -904,7 +945,7 @@ function renderDashboard(){
       </div>`;
 
   } else if(dashTab==='design'){
-    const leads = getTeamLeads('design');
+    const leads = getDashLeads(getTeamLeads('design'));
     const total = leads.length;
     const completed = leads.filter(l=>l.final_design_stage==='Design Completed').length;
     const tats = leads.map(l=>parseInt(l.design_tat)).filter(n=>!isNaN(n)&&n>0);
@@ -913,7 +954,7 @@ function renderDashboard(){
     tats.forEach(d=>{ if(d<=7)tatRanges['1-7 days']++; else if(d<=14)tatRanges['8-14 days']++; else if(d<=21)tatRanges['15-21 days']++; else if(d<=30)tatRanges['22-30 days']++; else tatRanges['30+ days']++; });
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Leads', total, 'Active in Design Team')}
+        ${sCard('Total Leads', total, getDateRangeLabel())}
         ${sCard('Design Completed', completed, total?Math.round(completed/total*100)+'% of total':'0%', '#1D9E75')}
         ${sCard('Avg Design TAT', avgTat ? avgTat+' days' : '—', 'Across all tracked leads', '#7F77DD')}
         ${sCard('Req Connect Done', leads.filter(l=>l.requirement_connect==='Completed').length, '', '#BA7517')}
@@ -928,14 +969,14 @@ function renderDashboard(){
       </div>`;
 
   } else if(dashTab==='project'){
-    const leads = getTeamLeads('project');
+    const leads = getDashLeads(getTeamLeads('project'));
     const total = leads.length;
     const handedOver = leads.filter(l=>l.final_project_stage==='Handover Certificate is Given').length;
     const inExecution = leads.filter(l=>l.execution_stage==='Installation In-Progress').length;
     const prodDone = leads.filter(l=>l.production_stage==='Production Completed').length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Projects', total, 'Active in Project Mgmt')}
+        ${sCard('Total Projects', total, getDateRangeLabel())}
         ${sCard('Handed Over', handedOver, total?Math.round(handedOver/total*100)+'% complete':'0%', '#1D9E75')}
         ${sCard('In Execution', inExecution, 'Currently installing', '#7F77DD')}
         ${sCard('Production Done', prodDone, '', '#BA7517')}
