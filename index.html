@@ -301,6 +301,11 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
         </div>
       </div>
       <div class="content">
+        <div id="bulk-action-bar" style="display:none;background:#FAECE7;border:1px solid #F09595;border-radius:10px;padding:10px 16px;margin-bottom:10px;display:none;align-items:center;gap:12px;">
+          <span id="bulk-count" style="font-size:13px;font-weight:600;color:#A32D2D;"></span>
+          <button onclick="bulkDeleteLeads()" style="padding:7px 14px;border-radius:8px;border:none;background:#A32D2D;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;"><i class="ti ti-trash"></i> Delete selected</button>
+          <button onclick="clearSelection()" style="padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:13px;color:#666;cursor:pointer;font-family:inherit;">Cancel</button>
+        </div>
         <div id="leads-table-wrap" class="table-wrap"><table><thead><tr id="leads-thead"></tr></thead><tbody id="leads-tbody"></tbody></table></div>
       </div>
     </div>
@@ -1019,6 +1024,68 @@ function mkBar(id,labels,data){
 }
 
 // ── LEADS TABLE ───────────────────────────────────────────────────────────
+function handleLeadsRowClick(event, leadId){
+  const tag = event.target.tagName.toLowerCase();
+  if(['input','button','a','select'].includes(tag)) return;
+  if(event.target.closest('button,input,select,a')) return;
+  openLead(leadId);
+}
+
+function toggleSelectAll(cb){
+  document.querySelectorAll('.lead-checkbox').forEach(c=>{ c.checked = cb.checked; });
+  updateBulkBar();
+}
+
+function updateBulkBar(){
+  const checked = document.querySelectorAll('.lead-checkbox:checked');
+  const bar = document.getElementById('bulk-action-bar');
+  const countEl = document.getElementById('bulk-count');
+  if(!bar) return;
+  if(checked.length > 0){
+    bar.style.display = 'flex';
+    countEl.textContent = checked.length + ' lead' + (checked.length>1?'s':'') + ' selected';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function clearSelection(){
+  document.querySelectorAll('.lead-checkbox').forEach(c=>{ c.checked=false; });
+  const sa = document.getElementById('select-all-leads');
+  if(sa) sa.checked = false;
+  updateBulkBar();
+}
+
+async function deleteSingleLead(id){
+  if(!isAdmin()){ toast('Admin only.'); return; }
+  const lead = state.leads.find(x=>x.id===id);
+  const name = lead?.name || 'this lead';
+  if(!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  await sb.from('lead_notes').delete().eq('lead_id', id);
+  const {error} = await sb.from('leads').delete().eq('id', id);
+  if(error){ toast('Error: '+error.message); return; }
+  toast('Lead deleted.');
+  await loadAll();
+}
+
+async function bulkDeleteLeads(){
+  if(!isAdmin()){ toast('Admin only.'); return; }
+  const checked = [...document.querySelectorAll('.lead-checkbox:checked')];
+  if(!checked.length) return;
+  const ids = checked.map(c=>c.dataset.id);
+  if(!confirm(`Permanently delete ${ids.length} lead${ids.length>1?'s':''}? This cannot be undone.`)) return;
+  toast('Deleting...');
+  // Delete notes first
+  for(const id of ids){
+    await sb.from('lead_notes').delete().eq('lead_id', id);
+  }
+  const {error} = await sb.from('leads').delete().in('id', ids);
+  if(error){ toast('Error: '+error.message); return; }
+  toast(`✓ ${ids.length} lead${ids.length>1?'s':''} deleted.`);
+  clearSelection();
+  await loadAll();
+}
+
 function getFilteredLeads(){
   return [...state.leads].sort((a,b)=>(a.name||'').localeCompare(b.name||''));
 }
@@ -1037,10 +1104,12 @@ function renderLeads(){
     .filter(f=>state.fieldVisible[f.key]!==false && f.type!=='file')
     .map(f=>f.key);
   allCols.push('created_at');
-  document.getElementById('leads-thead').innerHTML=allCols.map(k=>`<th style="white-space:nowrap;min-width:100px;">${fieldLabel(k)}</th>`).join('')+'<th></th>';
+  const adminCols = isAdmin() ? `<th style="width:36px;padding:8px;"><input type="checkbox" id="select-all-leads" onclick="toggleSelectAll(this)" style="cursor:pointer;width:15px;height:15px;"></th>` : '';
+  document.getElementById('leads-thead').innerHTML=adminCols+allCols.map(k=>`<th style="white-space:nowrap;min-width:100px;">${fieldLabel(k)}</th>`).join('')+'<th></th>';
   const tb=document.getElementById('leads-tbody');
   if(!leads.length){tb.innerHTML=`<tr><td colspan="${allCols.length+1}" class="empty">No leads yet.</td></tr>`;return;}
-  tb.innerHTML=leads.map(l=>`<tr class="clickable" onclick="openLead('${l.id}')">
+  tb.innerHTML=leads.map(l=>`<tr onclick="handleLeadsRowClick(event,'${l.id}')" style="cursor:pointer;" id="row-${l.id}">
+    ${isAdmin()?`<td style="width:36px;padding:8px;" onclick="event.stopPropagation()"><input type="checkbox" class="lead-checkbox" data-id="${l.id}" onchange="updateBulkBar()" style="cursor:pointer;width:15px;height:15px;"></td>`:''}
     ${allCols.map(k=>{
       const val=l[k]||'';
       if(k==='name')return`<td style="white-space:nowrap;"><div class="client-cell"><div class="avatar">${initials(l.name)}</div><strong>${l.name||'—'}</strong></div></td>`;
@@ -1049,8 +1118,13 @@ function renderLeads(){
       if(ALL_FIELDS.find(f=>f.key===k)?.type==='select'&&val)return`<td><span class="badge b-default" style="white-space:nowrap;">${val}</span></td>`;
       return`<td style="white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${val||'—'}</td>`;
     }).join('')}
-    <td><button class="btn btn-sm" onclick="event.stopPropagation();openLeadEdit('${l.id}')"><i class="ti ti-edit"></i></button></td>
+    <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+      <button class="btn btn-sm" onclick="openLeadEdit('${l.id}')"><i class="ti ti-edit"></i></button>
+      ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="deleteSingleLead('${l.id}')" style="margin-left:4px;"><i class="ti ti-trash"></i></button>`:''}
+    </td>
   </tr>`).join('');
+  // Show bulk action bar if admin
+  if(isAdmin()) updateBulkBar();
 }
 
 function fieldLabel(key){const f=ALL_FIELDS.find(x=>x.key===key);return f?f.label:key.replace(/_/g,' ');}
