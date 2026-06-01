@@ -749,15 +749,10 @@ async function loadAll(){
     sb.from('lead_notes').select('*').order('created_at',{ascending:false}),
   ]);
   state.leads=l.data||[];state.notes=n.data||[];
-  populateCityFilter();
   renderCurrent();
 }
 
-function populateCityFilter(){
-  const cities=[...new Set(state.leads.map(l=>l.city).filter(Boolean))].sort();
-  const sel=document.getElementById('filter-city');
-  if(sel){const cur=sel.value;sel.innerHTML='<option value="">All cities</option>'+cities.map(c=>`<option${c===cur?' selected':''}>${c}</option>`).join('');}
-}
+
 
 function renderCurrent(){
   const v=state.view;
