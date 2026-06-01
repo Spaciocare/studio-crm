@@ -1238,36 +1238,29 @@ async function inlineSave(leadId, fieldKey, value, team){
   const idx = state.leads.findIndex(x=>x.id===leadId);
   if(idx>-1) Object.assign(state.leads[idx], data);
 
-  // Find scroll container - try multiple selectors
-  const teamContent = document.getElementById(team+'-content');
-  let scrollEl = null;
-  if(teamContent){
-    // Walk up to find scrollable parent
-    let el = teamContent;
-    while(el && el !== document.body){
-      if(el.scrollTop > 0 || el.scrollHeight > el.clientHeight){
-        scrollEl = el;
-        break;
-      }
-      el = el.parentElement;
-    }
-    // Fallback: find .content div
-    if(!scrollEl) scrollEl = teamContent.closest('.content') || teamContent.parentElement;
-  }
-  const savedScroll = scrollEl ? scrollEl.scrollTop : 0;
+  // Update the select styling in place
+  updateSelectStyle(leadId, fieldKey, value);
 
-  // Only re-render if stage gate may have changed (payment_status or final_design_stage changed)
+  // For stage gate fields, re-render but preserve BOTH scroll positions
   const stageFields = ['payment_status','connected_call_status','floor_plan_status','final_design_stage'];
   if(stageFields.includes(fieldKey)){
+    // Save scroll positions
+    const teamContentEl = document.getElementById(team+'-content');
+    const contentDiv = teamContentEl ? teamContentEl.closest('.content') : null;
+    const tableWrap = teamContentEl ? teamContentEl.querySelector('.table-wrap') : null;
+    const savedScrollTop = contentDiv ? contentDiv.scrollTop : 0;
+    const savedScrollLeft = tableWrap ? tableWrap.scrollLeft : 0;
+
     renderTeamView(team,'');
-    // Restore scroll after DOM update
-    if(scrollEl){
-      setTimeout(()=>{ scrollEl.scrollTop = savedScroll; }, 0);
-      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ scrollEl.scrollTop = savedScroll; }); });
-    }
-  } else {
-    // For non-stage fields, just update the dropdown color in place without full re-render
-    updateSelectStyle(leadId, fieldKey, value);
+
+    // Restore both scroll positions
+    requestAnimationFrame(()=>{
+      const newContent = document.getElementById(team+'-content');
+      const newContentDiv = newContent ? newContent.closest('.content') : null;
+      const newTableWrap = newContent ? newContent.querySelector('.table-wrap') : null;
+      if(newContentDiv) newContentDiv.scrollTop = savedScrollTop;
+      if(newTableWrap) newTableWrap.scrollLeft = savedScrollLeft;
+    });
   }
 
   toast('✓ Saved');
