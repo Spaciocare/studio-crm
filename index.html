@@ -357,6 +357,7 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
             <div class="settings-nav-item active" onclick="showSettingsPanel('fields')">Field visibility</div>
             <div class="settings-nav-item" onclick="showSettingsPanel('groups')">Team groups</div>
             <div class="settings-nav-item" onclick="showSettingsPanel('users')">Team members</div>
+            <div class="settings-nav-item" onclick="showSettingsPanel('pricelist')">Price List</div>
           </div>
           <div id="settings-panel-fields" class="settings-panel">
             <div class="settings-panel-title">Field visibility</div>
@@ -368,6 +369,18 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
             <div class="settings-panel-sub">Choose which fields each team sees and can update</div>
             <div id="group-settings"></div>
           </div>
+          <div id="settings-panel-pricelist" class="settings-panel hidden">
+            <div class="settings-panel-title">Price List</div>
+            <div class="settings-panel-sub">Admin-only: manage products and rates. BDI team uses this list to build quotes.</div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="openAddProduct()"><i class="ti ti-plus"></i> Add Product</button>
+              <label class="btn" style="cursor:pointer;"><i class="ti ti-upload"></i> Import from Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="importPriceList(this)"></label>
+              <button class="btn" onclick="exportPriceList()"><i class="ti ti-file-spreadsheet"></i> Export</button>
+              <input type="text" id="pl-search" placeholder="Search products..." oninput="renderPriceList()" style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;outline:none;flex:1;min-width:160px;">
+            </div>
+            <div id="pricelist-table"></div>
+          </div>
+
           <div id="settings-panel-users" class="settings-panel hidden">
             <div class="settings-panel-title">Team members</div>
             <div class="settings-panel-sub">Add and manage your team. Each member gets a login to access their team view.</div>
@@ -518,6 +531,68 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
     <div id="drill-content" style="max-height:65vh;overflow:auto;"></div>
   </div>
 
+  <!-- Add/Edit Product Modal -->
+  <div class="modal hidden" id="modal-product" style="width:520px;max-width:96vw;">
+    <div class="modal-title">
+      <span id="product-modal-title">Add Product</span>
+      <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Product Name *</label><input id="pl-name" type="text" placeholder="e.g. Kitchen Base Storage" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+      <div class="form-group"><label class="form-label">Category / Room</label><input id="pl-category" type="text" list="pl-cat-list" placeholder="e.g. Kitchen, Living, Foyer" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"><datalist id="pl-cat-list"></datalist></div>
+      <div class="form-group" style="grid-column:1/-1"><label class="form-label">Description</label><textarea id="pl-desc" rows="2" placeholder="Material details, brand, finish..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;resize:vertical;"></textarea></div>
+      <div class="form-group"><label class="form-label">Unit</label>
+        <select id="pl-unit" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;">
+          <option>SQFT</option><option>RFT</option><option>Nos</option><option>Set</option><option>Lump sum</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Rate per Unit (₹) *</label><input id="pl-rate" type="number" placeholder="0" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+    </div>
+    <input type="hidden" id="pl-edit-id">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn" onclick="closeAllModals()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+
+  <!-- Quote Builder Modal -->
+  <div class="modal hidden" id="modal-quote-builder" style="width:960px;max-width:98vw;height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-title" style="flex-shrink:0;">
+      <span id="qb-title">Create Quote</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="saveQuote('draft')" class="btn btn-sm" style="font-size:12px;">Save Draft</button>
+        <button onclick="saveQuote('published')" class="btn btn-primary btn-sm" style="font-size:12px;"><i class="ti ti-send"></i> Publish & Get Link</button>
+        <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;margin-left:4px;"><i class="ti ti-x"></i></span>
+      </div>
+    </div>
+    <div style="flex:1;overflow:auto;padding:0 4px 16px;">
+      <!-- Quote meta -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div><label style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;">Valid Till</label><input type="date" id="qb-valid-till" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;margin-top:4px;"></div>
+        <div><label style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;">Discount (₹)</label><input type="number" id="qb-discount" value="0" oninput="recalcQuote()" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;margin-top:4px;"></div>
+        <div><label style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;">Notes</label><input type="text" id="qb-notes" placeholder="Internal notes..." style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;margin-top:4px;"></div>
+      </div>
+
+      <!-- Rooms -->
+      <div id="qb-rooms"></div>
+      <button onclick="addQuoteRoom()" style="display:flex;align-items:center;gap:6px;padding:10px 16px;border:2px dashed #C9A84C;border-radius:10px;background:transparent;color:#C9A84C;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;justify-content:center;margin-top:8px;">
+        <i class="ti ti-plus"></i> Add Room
+      </button>
+
+      <!-- Price summary -->
+      <div id="qb-summary" style="margin-top:20px;background:#1A1A1A;border-radius:12px;padding:16px;color:#fff;">
+        <div style="font-size:12px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Price Summary</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="color:#aaa;">Subtotal</span><span id="qb-subtotal">₹0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="color:#aaa;">Discount</span><span id="qb-discount-display" style="color:#C9A84C;">₹0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="color:#aaa;">GST (18%)</span><span id="qb-gst">₹0</span></div>
+        <div style="border-top:1px solid #333;margin:10px 0;"></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;"><span style="color:#C9A84C;">Total Payable</span><span id="qb-total">₹0</span></div>
+      </div>
+    </div>
+    <input type="hidden" id="qb-lead-id">
+    <input type="hidden" id="qb-quote-id">
+  </div>
+
 </div>
 
 <script>
@@ -644,6 +719,419 @@ function loadSettings(){
 function saveSettings(){
   localStorage.setItem('crm_fv',JSON.stringify(state.fieldVisible));
   localStorage.setItem('crm_gf',JSON.stringify(state.groupFields));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PRICE LIST MANAGER (Admin)
+// ═══════════════════════════════════════════════════════════════════
+let priceListData = [];
+let editingProductId = null;
+
+async function loadPriceList(){
+  const {data,error} = await sb.from('price_list').select('*').order('category').order('name');
+  if(!error) priceListData = data||[];
+}
+
+function renderPriceList(){
+  const el = document.getElementById('pricelist-table');
+  if(!el) return;
+  const q = (document.getElementById('pl-search')?.value||'').toLowerCase();
+  const items = priceListData.filter(p=>
+    !q || p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q)
+  );
+  if(!items.length){
+    el.innerHTML='<div class="empty">No products found. Add your first product above.</div>';
+    return;
+  }
+  // Group by category
+  const groups = {};
+  items.forEach(p=>{ const c=p.category||'General'; if(!groups[c])groups[c]=[]; groups[c].push(p); });
+
+  el.innerHTML = Object.entries(groups).map(([cat,prods])=>`
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.06em;padding:6px 0;border-bottom:2px solid #C9A84C;margin-bottom:8px;">${cat} (${prods.length})</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr>
+          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;">Product</th>
+          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;">Description</th>
+          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;">Unit</th>
+          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;">Rate (₹)</th>
+          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;">Status</th>
+          <th style="padding:7px 6px;background:#1A1A1A;"></th>
+        </tr></thead>
+        <tbody>${prods.map((p,i)=>`<tr style="background:${i%2===0?'#fff':'#fafafa'};border-bottom:1px solid #f0f0f0;">
+          <td style="padding:8px 10px;font-weight:600;color:#1a1a1a;">${p.name}</td>
+          <td style="padding:8px 10px;color:#888;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.description||'—'}</td>
+          <td style="padding:8px 10px;text-align:center;color:#555;">${p.unit||'SQFT'}</td>
+          <td style="padding:8px 10px;text-align:right;font-weight:600;color:#1a1a1a;">₹${Number(p.rate||0).toLocaleString('en-IN')}</td>
+          <td style="padding:8px 10px;text-align:center;">
+            <span style="background:${p.active!==false?'#EAF3DE':'#f5f4f0'};color:${p.active!==false?'#27500A':'#888'};border-radius:99px;padding:2px 8px;font-size:10px;font-weight:600;">${p.active!==false?'Active':'Inactive'}</span>
+          </td>
+          <td style="padding:8px 6px;text-align:center;white-space:nowrap;">
+            <button onclick="editProduct('${p.id}')" style="border:1px solid #ddd;border-radius:6px;background:#fff;padding:3px 7px;cursor:pointer;font-size:12px;margin-right:3px;"><i class="ti ti-edit"></i></button>
+            <button onclick="deleteProduct('${p.id}')" style="border:1px solid #F09595;border-radius:6px;background:#fff;padding:3px 7px;cursor:pointer;font-size:12px;color:#A32D2D;"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`).join('');
+
+  // Populate datalist for category
+  const cats = [...new Set(priceListData.map(p=>p.category).filter(Boolean))];
+  const dl = document.getElementById('pl-cat-list');
+  if(dl) dl.innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+}
+
+function openAddProduct(){
+  editingProductId = null;
+  document.getElementById('product-modal-title').textContent='Add Product';
+  document.getElementById('pl-name').value='';
+  document.getElementById('pl-category').value='';
+  document.getElementById('pl-desc').value='';
+  document.getElementById('pl-unit').value='SQFT';
+  document.getElementById('pl-rate').value='';
+  document.getElementById('pl-edit-id').value='';
+  openModal('product');
+}
+
+function editProduct(id){
+  const p = priceListData.find(x=>x.id===id);
+  if(!p) return;
+  editingProductId = id;
+  document.getElementById('product-modal-title').textContent='Edit Product';
+  document.getElementById('pl-name').value=p.name||'';
+  document.getElementById('pl-category').value=p.category||'';
+  document.getElementById('pl-desc').value=p.description||'';
+  document.getElementById('pl-unit').value=p.unit||'SQFT';
+  document.getElementById('pl-rate').value=p.rate||0;
+  document.getElementById('pl-edit-id').value=id;
+  openModal('product');
+}
+
+async function saveProduct(){
+  const name = document.getElementById('pl-name').value.trim();
+  const rate = parseFloat(document.getElementById('pl-rate').value)||0;
+  if(!name){ toast('Product name is required'); return; }
+  const data = {
+    name,
+    category: document.getElementById('pl-category').value.trim()||'General',
+    description: document.getElementById('pl-desc').value.trim(),
+    unit: document.getElementById('pl-unit').value,
+    rate,
+    active: true
+  };
+  const id = document.getElementById('pl-edit-id').value;
+  if(id){
+    const {error} = await sb.from('price_list').update(data).eq('id',id);
+    if(error){ toast('Error: '+error.message); return; }
+  } else {
+    const {error} = await sb.from('price_list').insert(data);
+    if(error){ toast('Error: '+error.message); return; }
+  }
+  closeAllModals();
+  toast('Product saved!');
+  await loadPriceList();
+  renderPriceList();
+}
+
+async function deleteProduct(id){
+  if(!confirm('Delete this product? It will not affect existing quotes.')) return;
+  const {error} = await sb.from('price_list').delete().eq('id',id);
+  if(error){ toast('Error: '+error.message); return; }
+  toast('Deleted.');
+  await loadPriceList();
+  renderPriceList();
+}
+
+async function importPriceList(input){
+  if(!input.files||!input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const wb = XLSX.read(e.target.result, {type:'binary'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws);
+    if(!rows.length){ toast('No data found'); return; }
+    toast('Importing '+rows.length+' products...');
+    const products = rows.map(r=>({
+      name: String(r['Product Name']||r['name']||r['Name']||'').trim(),
+      category: String(r['Category']||r['category']||r['Room']||'General').trim(),
+      description: String(r['Description']||r['description']||'').trim(),
+      unit: String(r['Unit']||r['unit']||'SQFT').trim(),
+      rate: parseFloat(r['Rate']||r['rate']||r['Price']||0),
+      active: true
+    })).filter(p=>p.name);
+    const {error} = await sb.from('price_list').insert(products);
+    if(error){ toast('Import error: '+error.message); return; }
+    toast('✓ Imported '+products.length+' products!');
+    await loadPriceList();
+    renderPriceList();
+  };
+  reader.readAsBinaryString(file);
+  input.value='';
+}
+
+function exportPriceList(){
+  if(!priceListData.length){ toast('No products to export'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(priceListData.map(p=>({
+    'Product Name':p.name,'Category':p.category,'Description':p.description,'Unit':p.unit,'Rate':p.rate,'Active':p.active?'Yes':'No'
+  })));
+  ws['!cols']=[{wch:30},{wch:20},{wch:40},{wch:10},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws,'Price List');
+  XLSX.writeFile(wb,'Spacioworks_PriceList_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// QUOTE BUILDER (BDI Team)
+// ═══════════════════════════════════════════════════════════════════
+let qbRooms = []; // [{id, name, items:[{productId,name,desc,unit,qty,rate}]}]
+let qbLeadId = null;
+let qbQuoteId = null;
+
+function openQuoteBuilder(leadId){
+  qbLeadId = leadId;
+  qbQuoteId = null;
+  qbRooms = [];
+  document.getElementById('qb-lead-id').value = leadId;
+  document.getElementById('qb-quote-id').value = '';
+  document.getElementById('qb-discount').value = '0';
+  document.getElementById('qb-notes').value = '';
+  // Set default valid till = 7 days from today
+  const vt = new Date(); vt.setDate(vt.getDate()+7);
+  document.getElementById('qb-valid-till').value = vt.toISOString().slice(0,10);
+  const lead = state.leads.find(x=>x.id===leadId);
+  document.getElementById('qb-title').textContent = 'Create Quote — '+(lead?.name||'');
+  // Check for existing draft quote
+  loadExistingQuote(leadId);
+  openModal('quote-builder');
+}
+
+async function loadExistingQuote(leadId){
+  const {data} = await sb.from('quotes').select('*').eq('lead_id',leadId).order('created_at',{ascending:false}).limit(1);
+  if(data&&data.length){
+    const q = data[0];
+    qbQuoteId = q.id;
+    document.getElementById('qb-quote-id').value = q.id;
+    document.getElementById('qb-discount').value = q.discount||0;
+    document.getElementById('qb-notes').value = q.notes||'';
+    if(q.valid_till) document.getElementById('qb-valid-till').value = q.valid_till;
+    qbRooms = q.rooms||[];
+    document.getElementById('qb-title').textContent = 'Edit Quote — '+(state.leads.find(x=>x.id===leadId)?.name||'')+' ('+q.status+')';
+  }
+  renderQBRooms();
+  recalcQuote();
+}
+
+function addQuoteRoom(){
+  qbRooms.push({id:'room_'+Date.now(), name:'New Room', items:[]});
+  renderQBRooms();
+}
+
+function removeQuoteRoom(roomId){
+  qbRooms = qbRooms.filter(r=>r.id!==roomId);
+  renderQBRooms();
+  recalcQuote();
+}
+
+function renderQBRooms(){
+  const el = document.getElementById('qb-rooms');
+  if(!el) return;
+  if(!qbRooms.length){
+    el.innerHTML=`<div style="text-align:center;padding:24px;color:#aaa;border:2px dashed #eee;border-radius:10px;font-size:13px;">No rooms yet — click "Add Room" below to start building the quote</div>`;
+    return;
+  }
+  el.innerHTML = qbRooms.map((room,ri)=>{
+    const roomTotal = room.items.reduce((s,it)=>s+(parseFloat(it.qty||0)*parseFloat(it.rate||0)),0);
+    return `<div style="border:1px solid #eee;border-radius:12px;margin-bottom:12px;overflow:hidden;">
+      <div style="background:#1A1A1A;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+        <input value="${room.name}" onchange="qbRooms[${ri}].name=this.value;renderQBRooms();" style="flex:1;background:transparent;border:none;color:#C9A84C;font-size:14px;font-weight:700;font-family:inherit;outline:none;">
+        <span style="color:#aaa;font-size:13px;">₹${roomTotal.toLocaleString('en-IN')}</span>
+        <button onclick="removeQuoteRoom('${room.id}')" style="border:none;background:transparent;color:#888;cursor:pointer;font-size:14px;"><i class="ti ti-trash"></i></button>
+      </div>
+      <div style="padding:10px 14px;">
+        ${room.items.length?`<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px;">
+          <thead><tr>
+            <th style="text-align:left;padding:5px 8px;color:#888;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid #f0f0f0;">Product</th>
+            <th style="text-align:left;padding:5px 8px;color:#888;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid #f0f0f0;">Description</th>
+            <th style="text-align:center;padding:5px 8px;color:#888;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid #f0f0f0;">Unit</th>
+            <th style="text-align:center;padding:5px 8px;color:#888;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid #f0f0f0;">Qty</th>
+            <th style="text-align:right;padding:5px 8px;color:#888;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid #f0f0f0;">Rate</th>
+            <th style="text-align:right;padding:5px 8px;color:#888;font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid #f0f0f0;">Amount</th>
+            <th style="border-bottom:1px solid #f0f0f0;"></th>
+          </tr></thead>
+          <tbody>${room.items.map((it,ii)=>`<tr style="border-bottom:1px solid #f5f5f5;">
+            <td style="padding:6px 8px;font-weight:500;">${it.name}</td>
+            <td style="padding:6px 8px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.description||'—'}</td>
+            <td style="padding:6px 8px;text-align:center;">${it.unit}</td>
+            <td style="padding:4px 6px;text-align:center;"><input type="number" value="${it.qty||1}" min="0.1" step="0.1" onchange="qbRooms[${ri}].items[${ii}].qty=parseFloat(this.value)||0;renderQBRooms();recalcQuote();" style="width:60px;padding:3px 5px;border:1px solid #ddd;border-radius:5px;font-family:inherit;font-size:12px;text-align:center;outline:none;"></td>
+            <td style="padding:6px 8px;text-align:right;">₹${Number(it.rate).toLocaleString('en-IN')}</td>
+            <td style="padding:6px 8px;text-align:right;font-weight:600;">₹${(parseFloat(it.qty||0)*parseFloat(it.rate||0)).toLocaleString('en-IN')}</td>
+            <td style="padding:4px;"><button onclick="qbRooms[${ri}].items.splice(${ii},1);renderQBRooms();recalcQuote();" style="border:none;background:transparent;color:#ccc;cursor:pointer;font-size:13px;"><i class="ti ti-x"></i></button></td>
+          </tr>`).join('')}</tbody>
+        </table>`:'<div style="color:#ccc;font-size:12px;padding:4px 0 8px;">No items yet</div>'}
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="text" placeholder="Search products to add..." id="pl-search-${room.id}" oninput="renderProductSearch('${room.id}',${ri})" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:inherit;outline:none;min-width:160px;">
+          <div id="pl-results-${room.id}" style="width:100%;"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderProductSearch(roomId, roomIdx){
+  const q = (document.getElementById('pl-search-'+roomId)?.value||'').toLowerCase().trim();
+  const el = document.getElementById('pl-results-'+roomId);
+  if(!el) return;
+  if(!q){ el.innerHTML=''; return; }
+  const results = priceListData.filter(p=>p.active!==false&&(p.name.toLowerCase().includes(q)||p.category?.toLowerCase().includes(q))).slice(0,8);
+  if(!results.length){ el.innerHTML='<div style="font-size:12px;color:#aaa;padding:4px;">No products found</div>'; return; }
+  el.innerHTML=`<div style="border:1px solid #eee;border-radius:8px;overflow:hidden;margin-top:4px;">
+    ${results.map(p=>`<div onclick="addProductToRoom(${roomIdx},'${p.id}')" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;align-items:center;background:#fff;" onmouseover="this.style.background='#EEEDFE'" onmouseout="this.style.background='#fff'">
+      <div>
+        <div style="font-weight:600;color:#1a1a1a;">${p.name} <span style="font-weight:400;color:#aaa;">(${p.category||''})</span></div>
+        <div style="color:#888;font-size:11px;">${p.description?.substring(0,60)||''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+        <div style="font-weight:700;color:#1a1a1a;">₹${Number(p.rate).toLocaleString('en-IN')}</div>
+        <div style="color:#aaa;font-size:10px;">per ${p.unit}</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function addProductToRoom(roomIdx, productId){
+  const p = priceListData.find(x=>x.id===productId);
+  if(!p) return;
+  qbRooms[roomIdx].items.push({productId:p.id,name:p.name,description:p.description||'',unit:p.unit||'SQFT',qty:1,rate:p.rate||0});
+  renderQBRooms();
+  recalcQuote();
+}
+
+function recalcQuote(){
+  const subtotal = qbRooms.reduce((s,r)=>s+r.items.reduce((rs,it)=>rs+(parseFloat(it.qty||0)*parseFloat(it.rate||0)),0),0);
+  const discount = parseFloat(document.getElementById('qb-discount')?.value||0);
+  const afterDiscount = Math.max(0, subtotal - discount);
+  const gst = afterDiscount * 0.18;
+  const total = afterDiscount + gst;
+  const fmt = n=>'₹'+Math.round(n).toLocaleString('en-IN');
+  const setT = (id,v)=>{ const el=document.getElementById(id); if(el)el.textContent=v; };
+  setT('qb-subtotal',fmt(subtotal));
+  setT('qb-discount-display','−'+fmt(discount));
+  setT('qb-gst',fmt(gst));
+  setT('qb-total',fmt(total));
+}
+
+async function saveQuote(status){
+  if(!qbLeadId){ toast('No lead selected'); return; }
+  const discount = parseFloat(document.getElementById('qb-discount').value||0);
+  const notes = document.getElementById('qb-notes').value;
+  const validTill = document.getElementById('qb-valid-till').value;
+  const lead = state.leads.find(x=>x.id===qbLeadId);
+
+  // Generate quote number if new
+  let quoteNumber = '';
+  if(!qbQuoteId){
+    const ts = Date.now().toString().slice(-6);
+    quoteNumber = 'Q-'+ts;
+  }
+
+  const payload = {
+    lead_id: qbLeadId,
+    status,
+    discount,
+    notes,
+    valid_till: validTill||null,
+    rooms: qbRooms,
+    gst_percent: 18,
+    updated_at: new Date().toISOString(),
+    ...(quoteNumber?{quote_number:quoteNumber}:{}),
+    created_by: state.user?.email||''
+  };
+
+  let quoteId = qbQuoteId;
+  if(quoteId){
+    const {error} = await sb.from('quotes').update(payload).eq('id',quoteId);
+    if(error){ toast('Error: '+error.message); return; }
+  } else {
+    const {data,error} = await sb.from('quotes').insert(payload).select().single();
+    if(error){ toast('Error: '+error.message); return; }
+    quoteId = data.id;
+    qbQuoteId = quoteId;
+    document.getElementById('qb-quote-id').value = quoteId;
+  }
+
+  if(status==='published'){
+    const link = `${location.origin}/quote.html?id=${quoteId}`;
+    closeAllModals();
+    // Show link popup
+    showQuoteLink(link, lead?.name||'Customer');
+  } else {
+    toast('✓ Draft saved!');
+    closeAllModals();
+  }
+  renderLeadQuotes(qbLeadId);
+}
+
+function showQuoteLink(link, clientName){
+  const msg = encodeURIComponent(`Hi ${clientName},\n\nHere is your personalised interior design quote from Spacioworks.\n\nView your quote here: ${link}\n\nThis link always shows the latest version. Feel free to reach out for any queries.\n\nWarm regards,\nSpacioworks Team\n+91-9600011441 | care@spacioworks.in`);
+  const wa = `https://wa.me/?text=${msg}`;
+  toast('✓ Quote published!');
+  const div = document.createElement('div');
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  div.innerHTML=`<div style="background:#fff;border-radius:16px;padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:6px;">Quote Published!</div>
+    <div style="font-size:13px;color:#888;margin-bottom:14px;">Share this link with ${clientName}:</div>
+    <div style="background:#f5f4f0;border-radius:8px;padding:10px 12px;font-size:12px;color:#1a1a1a;word-break:break-all;margin-bottom:14px;">${link}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <button onclick="navigator.clipboard.writeText('${link}').then(()=>toast('Link copied!'))" style="flex:1;padding:9px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;"><i class="ti ti-copy"></i> Copy Link</button>
+      <a href="${wa}" target="_blank" style="flex:1;padding:9px;border:none;border-radius:8px;background:#25D366;color:#fff;cursor:pointer;font-family:inherit;font-size:13px;text-align:center;text-decoration:none;display:block;"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;padding:9px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;">Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(div);
+}
+
+async function renderLeadQuotes(leadId){
+  const el = document.getElementById('lead-quotes');
+  if(!el) return;
+  const {data} = await sb.from('quotes').select('*').eq('lead_id',leadId).order('created_at',{ascending:false});
+  if(!data||!data.length){ el.innerHTML=''; return; }
+  el.innerHTML=`<div style="margin-bottom:16px;">
+    <div style="font-size:12px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Quotes</div>
+    ${data.map(q=>{
+      const subtotal=q.rooms?.reduce((s,r)=>s+r.items?.reduce((rs,it)=>rs+(parseFloat(it.qty||0)*parseFloat(it.rate||0)),0),0)||0;
+      const afterDisc=Math.max(0,subtotal-(q.discount||0));
+      const total=afterDisc*1.18;
+      const link=`${location.origin}/quote.html?id=${q.id}`;
+      const statusColor={draft:'#f5f4f0',published:'#EAF3DE',expired:'#FAECE7',accepted:'#EEEDFE'}[q.status]||'#f5f4f0';
+      const statusText={draft:'#555',published:'#27500A',expired:'#712B13',accepted:'#3C3489'}[q.status]||'#555';
+      return `<div style="border:1px solid #eee;border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:#1a1a1a;">${q.quote_number||'Draft'}</div>
+          <div style="font-size:12px;color:#888;margin-top:2px;">${q.rooms?.length||0} rooms · Valid till ${q.valid_till?fmtDate(q.valid_till):'—'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:700;color:#1a1a1a;">₹${Math.round(total).toLocaleString('en-IN')}</div>
+          <div style="font-size:11px;color:#888;">incl. GST</div>
+        </div>
+        <span style="background:${statusColor};color:${statusText};border-radius:99px;padding:3px 10px;font-size:11px;font-weight:600;text-transform:capitalize;">${q.status}</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${(isAdmin()||state.currentTeam==='sales')?`<button onclick="openQuoteBuilder('${leadId}')" style="padding:5px 10px;border:1px solid #ddd;border-radius:7px;background:#fff;cursor:pointer;font-size:12px;font-family:inherit;"><i class="ti ti-edit"></i> Edit</button>`:''}
+          ${q.status==='published'?`<button onclick="navigator.clipboard.writeText('${link}').then(()=>toast('Link copied!'))" style="padding:5px 10px;border:1px solid #C9A84C;border-radius:7px;background:#fff;cursor:pointer;font-size:12px;font-family:inherit;color:#C9A84C;"><i class="ti ti-link"></i> Copy Link</button>
+          <a href="${link}" target="_blank" style="padding:5px 10px;border:1px solid #ddd;border-radius:7px;background:#fff;cursor:pointer;font-size:12px;font-family:inherit;text-decoration:none;color:#1a1a1a;display:inline-block;"><i class="ti ti-eye"></i> View</a>`:''}
+          ${isAdmin()?`<button onclick="deleteQuote('${q.id}','${leadId}')" style="padding:5px 10px;border:1px solid #F09595;border-radius:7px;background:#fff;cursor:pointer;font-size:12px;font-family:inherit;color:#A32D2D;"><i class="ti ti-trash"></i></button>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function deleteQuote(quoteId, leadId){
+  if(!isAdmin()) return;
+  if(!confirm('Delete this quote?')) return;
+  await sb.from('quotes').delete().eq('id',quoteId);
+  toast('Quote deleted.');
+  renderLeadQuotes(leadId);
 }
 
 async function init(){
@@ -1716,6 +2204,7 @@ async function addNote(){
 // ── SETTINGS PAGE ─────────────────────────────────────────────────────────
 function showSettingsPanel(panel){
   document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden'));
+  if(panel==='pricelist') renderPriceList();
   const target = document.getElementById('settings-panel-'+panel);
   if(target) target.classList.remove('hidden');
   document.querySelectorAll('.settings-nav-item').forEach(i=>i.classList.remove('active'));
@@ -1727,6 +2216,8 @@ function showSettingsPanel(panel){
 
 function renderSettingsPage(){
   renderFieldToggles();
+  // Render price list if panel visible
+  setTimeout(()=>renderPriceList(),100);
 }
 
 
