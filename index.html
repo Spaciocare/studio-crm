@@ -815,88 +815,154 @@ function fmtVal(l,key){
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────
-function renderDashboard(){
-  const period=parseInt(document.getElementById('dash-period')?.value)||30;
-  const now=new Date();
-  const leads=state.leads.filter(l=>{
-    if(period==='all'||isNaN(period))return true;
-    const d=new Date(l.created_at);
-    return(now-d)/(1000*60*60*24)<=period;
+let dashTab = 'calling';
+
+function setDashTab(tab){
+  dashTab = tab;
+  document.querySelectorAll('.dash-tab').forEach(b=>{
+    const isActive = b.id === 'tab-'+tab;
+    b.style.background = isActive ? '#1a1a1a' : 'transparent';
+    b.style.color = isActive ? '#fff' : '#888';
   });
-  const total=leads.length;
-  const byStatus={}; leads.forEach(l=>{const s=l.final_lead_status||'Unknown';byStatus[s]=(byStatus[s]||0)+1;});
-  const hot=byStatus['Hot']||0,warm=byStatus['Warm']||0,won=byStatus['Won']||0,dead=byStatus['Dead']||0;
-  const bySource={};leads.forEach(l=>{const s=l.lead_source||'Unknown';bySource[s]=(bySource[s]||0)+1;});
-  const byCity={};leads.forEach(l=>{const c=l.city||'Unknown';byCity[c]=(byCity[c]||0)+1;});
-  const byCallStatus={};leads.forEach(l=>{const s=l.call_status||'Unknown';byCallStatus[s]=(byCallStatus[s]||0)+1;});
-  const quoted=leads.filter(l=>l.quote_status==='Quoted').length;
-  const qualified=leads.filter(l=>l.connected_call_status==='Lead Qualified').length;
-
-  const topCities=Object.entries(byCity).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const convRate=total?Math.round((won/total)*100):0;
-
-  document.getElementById('dashboard-content').innerHTML=`
-    <div class="stats-row stats-5" style="margin-bottom:14px;">
-      <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val">${total}</div><div class="stat-sub">in selected period</div></div>
-      <div class="stat-card"><div class="stat-label">Hot Leads</div><div class="stat-val" style="color:#D85A30;">${hot}</div><div class="stat-sub">${total?Math.round(hot/total*100):0}% of total</div></div>
-      <div class="stat-card"><div class="stat-label">Warm Leads</div><div class="stat-val" style="color:#BA7517;">${warm}</div><div class="stat-sub">${total?Math.round(warm/total*100):0}% of total</div></div>
-      <div class="stat-card"><div class="stat-label">Won</div><div class="stat-val" style="color:#1D9E75;">${won}</div><div class="stat-sub">Conversion: ${convRate}%</div></div>
-      <div class="stat-card"><div class="stat-label">Quoted</div><div class="stat-val" style="color:#7F77DD;">${quoted}</div><div class="stat-sub">${qualified} qualified</div></div>
-    </div>
-    <div class="dash-grid-2">
-      <div class="chart-card">
-        <div class="chart-title">Lead status funnel</div>
-        ${[['Total leads',total,total,'#7F77DD'],['Hot',hot,total,'#D85A30'],['Warm',warm,total,'#BA7517'],['Qualified',qualified,total,'#378ADD'],['Quoted',quoted,total,'#1D9E75'],['Won',won,total,'#27500A']].map(([l,v,t,c])=>`
-          <div class="funnel-bar">
-            <div class="funnel-label"><span>${l}</span><span style="font-weight:600;">${v}</span></div>
-            <div class="funnel-track"><div class="funnel-fill" style="width:${t?Math.round(v/t*100):0}%;background:${c};"></div></div>
-          </div>`).join('')}
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Leads by source</div>
-        <canvas id="chart-source" height="180"></canvas>
-      </div>
-    </div>
-    <div class="dash-grid-3">
-      <div class="chart-card">
-        <div class="chart-title">Call status breakdown</div>
-        <canvas id="chart-call" height="200"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Top cities</div>
-        ${topCities.map(([c,v])=>`
-          <div class="funnel-bar">
-            <div class="funnel-label"><span>${c}</span><span style="font-weight:600;">${v}</span></div>
-            <div class="funnel-track"><div class="funnel-fill" style="width:${topCities[0][1]?Math.round(v/topCities[0][1]*100):0}%;background:#7F77DD;"></div></div>
-          </div>`).join('')||'<div class="empty">No data</div>'}
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Lead status distribution</div>
-        <canvas id="chart-status" height="200"></canvas>
-      </div>
-    </div>
-    <div class="dash-grid-2">
-      <div class="chart-card">
-        <div class="chart-title">Property type split</div>
-        <canvas id="chart-proptype" height="160"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Property specification</div>
-        <canvas id="chart-propspec" height="160"></canvas>
-      </div>
-    </div>`;
-
-  setTimeout(()=>{
-    destroyCharts();
-    const bySpec={};leads.forEach(l=>{if(l.property_specification){bySpec[l.property_specification]=(bySpec[l.property_specification]||0)+1;}});
-    const byPropType={};leads.forEach(l=>{if(l.property_type){byPropType[l.property_type]=(byPropType[l.property_type]||0)+1;}});
-    mkDoughnut('chart-source',Object.keys(bySource),Object.values(bySource),'Lead Source');
-    mkDoughnut('chart-call',Object.keys(byCallStatus),Object.values(byCallStatus),'Call Status');
-    mkDoughnut('chart-status',['Hot','Warm','Cold','Won','Dead'],[byStatus['Hot']||0,byStatus['Warm']||0,byStatus['Cold']||0,byStatus['Won']||0,byStatus['Dead']||0],'Status');
-    mkBar('chart-proptype',Object.keys(byPropType),Object.values(byPropType));
-    mkBar('chart-propspec',['2BHK','3BHK','4BHK','5BHK','5BHK+'],[bySpec['2BHK']||0,bySpec['3BHK']||0,bySpec['4BHK']||0,bySpec['5BHK']||0,bySpec['5BHK+']||0]);
-  },50);
+  renderDashboard();
 }
+
+function countBy(leads, field){ const r={}; leads.forEach(l=>{const v=l[field]||'—';r[v]=(r[v]||0)+1;}); return r; }
+
+function barRows(obj, total, color){
+  color = color||'#7F77DD';
+  const entries = Object.entries(obj).filter(([k])=>k!=='—').sort((a,b)=>b[1]-a[1]);
+  if(!entries.length) return '<div style="color:#ccc;font-size:12px;padding:8px 0;">No data yet</div>';
+  const max = entries[0][1];
+  return entries.map(([k,v])=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+        <span style="color:#1a1a1a;font-weight:500;">${k}</span>
+        <span style="color:#555;">${v} <span style="color:#aaa;">(${total?Math.round(v/total*100):0}%)</span></span>
+      </div>
+      <div style="background:#f0f0f0;border-radius:99px;height:8px;overflow:hidden;">
+        <div style="height:100%;border-radius:99px;background:${color};width:${max?Math.round(v/max*100):0}%;transition:width .4s;"></div>
+      </div>
+    </div>`).join('');
+}
+
+function sCard(label, value, sub, color){
+  return `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-val" style="color:${color||'#1a1a1a'};">${value}</div>${sub?`<div class="stat-sub">${sub}</div>`:''}</div>`;
+}
+
+function cCard(title, content){
+  return `<div class="chart-card"><div class="chart-title">${title}</div>${content}</div>`;
+}
+
+function renderDashboard(){
+  destroyCharts();
+  const el = document.getElementById('dashboard-content');
+  if(!el) return;
+
+  if(dashTab==='calling'){
+    const leads = state.leads;
+    const total = leads.length;
+    const connected = leads.filter(l=>l.call_status==='Connected').length;
+    const qualified = leads.filter(l=>l.connected_call_status==='Lead Qualified').length;
+    const fpReceived = leads.filter(l=>l.floor_plan_status==='Received').length;
+    el.innerHTML=`
+      <div class="stats-row stats-4" style="margin-bottom:16px;">
+        ${sCard('Total Leads', total, 'All leads in system')}
+        ${sCard('Connected', connected, total?Math.round(connected/total*100)+'% of total':'0%', '#1D9E75')}
+        ${sCard('Lead Qualified', qualified, total?Math.round(qualified/total*100)+'% of total':'0%', '#7F77DD')}
+        ${sCard('Floor Plan Received', fpReceived, total?Math.round(fpReceived/total*100)+'% of total':'0%', '#BA7517')}
+      </div>
+      <div class="dash-grid-2">
+        ${cCard('Call Status Breakdown', barRows(countBy(leads,'call_status'), total, '#378ADD'))}
+        ${cCard('Connected Call Status', barRows(countBy(leads,'connected_call_status'), total, '#7F77DD'))}
+      </div>
+      <div class="dash-grid-2">
+        ${cCard('Floor Plan Status', barRows(countBy(leads,'floor_plan_status'), total, '#BA7517'))}
+        ${cCard('Final Lead Status', barRows(countBy(leads,'final_lead_status'), total, '#D85A30'))}
+      </div>`;
+
+  } else if(dashTab==='bdi'){
+    const leads = getTeamLeads('sales');
+    const total = leads.length;
+    const reqCollected = leads.filter(l=>l.architect_call_status==='Requirement Collected').length;
+    const quoted = leads.filter(l=>['Quoted','Quote Accepted'].includes(l.quote_status)).length;
+    const paymentCollected = leads.filter(l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)).length;
+    el.innerHTML=`
+      <div class="stats-row stats-4" style="margin-bottom:16px;">
+        ${sCard('Total Leads', total, 'Qualified leads in BDI')}
+        ${sCard('Requirements Collected', reqCollected, total?Math.round(reqCollected/total*100)+'% of total':'0%', '#7F77DD')}
+        ${sCard('Quotes Sent', quoted, total?Math.round(quoted/total*100)+'% of total':'0%', '#1D9E75')}
+        ${sCard('Payment Collected', paymentCollected, total?Math.round(paymentCollected/total*100)+'% of total':'0%', '#D85A30')}
+      </div>
+      <div class="dash-grid-2">
+        ${cCard('Quote Status', barRows(countBy(leads,'quote_status'), total, '#1D9E75'))}
+        ${cCard('Architect Call Status', barRows(countBy(leads,'architect_call_status'), total, '#7F77DD'))}
+      </div>
+      <div class="dash-grid-2">
+        ${cCard('Payment Status', barRows(countBy(leads,'payment_status'), total, '#BA7517'))}
+        ${cCard('BD Team Lead Status', barRows(countBy(leads,'bd_team_lead_status'), total, '#D85A30'))}
+      </div>`;
+
+  } else if(dashTab==='design'){
+    const leads = getTeamLeads('design');
+    const total = leads.length;
+    const completed = leads.filter(l=>l.final_design_stage==='Design Completed').length;
+    const tats = leads.map(l=>parseInt(l.design_tat)).filter(n=>!isNaN(n)&&n>0);
+    const avgTat = tats.length ? Math.round(tats.reduce((a,b)=>a+b,0)/tats.length) : 0;
+    const tatRanges={'1-7 days':0,'8-14 days':0,'15-21 days':0,'22-30 days':0,'30+ days':0};
+    tats.forEach(d=>{ if(d<=7)tatRanges['1-7 days']++; else if(d<=14)tatRanges['8-14 days']++; else if(d<=21)tatRanges['15-21 days']++; else if(d<=30)tatRanges['22-30 days']++; else tatRanges['30+ days']++; });
+    el.innerHTML=`
+      <div class="stats-row stats-4" style="margin-bottom:16px;">
+        ${sCard('Total Leads', total, 'Active in Design Team')}
+        ${sCard('Design Completed', completed, total?Math.round(completed/total*100)+'% of total':'0%', '#1D9E75')}
+        ${sCard('Avg Design TAT', avgTat ? avgTat+' days' : '—', 'Across all tracked leads', '#7F77DD')}
+        ${sCard('Req Connect Done', leads.filter(l=>l.requirement_connect==='Completed').length, '', '#BA7517')}
+      </div>
+      <div class="dash-grid-2">
+        ${cCard('Design Stage', barRows(countBy(leads,'design_stage'), total, '#7F77DD'))}
+        ${cCard('Final Design Stage', barRows(countBy(leads,'final_design_stage'), total, '#3C3489'))}
+      </div>
+      <div class="dash-grid-2">
+        ${cCard('Requirement Connect', barRows(countBy(leads,'requirement_connect'), total, '#1D9E75'))}
+        ${cCard('Design TAT Distribution', barRows(tatRanges, tats.length, '#BA7517'))}
+      </div>`;
+
+  } else if(dashTab==='project'){
+    const leads = getTeamLeads('project');
+    const total = leads.length;
+    const handedOver = leads.filter(l=>l.final_project_stage==='Handover Certificate is Given').length;
+    const inExecution = leads.filter(l=>l.execution_stage==='Installation In-Progress').length;
+    const prodDone = leads.filter(l=>l.production_stage==='Production Completed').length;
+    el.innerHTML=`
+      <div class="stats-row stats-4" style="margin-bottom:16px;">
+        ${sCard('Total Projects', total, 'Active in Project Mgmt')}
+        ${sCard('Handed Over', handedOver, total?Math.round(handedOver/total*100)+'% complete':'0%', '#1D9E75')}
+        ${sCard('In Execution', inExecution, 'Currently installing', '#7F77DD')}
+        ${sCard('Production Done', prodDone, '', '#BA7517')}
+      </div>
+      <div class="dash-grid-2">
+        ${cCard('Production Stage', barRows(countBy(leads,'production_stage'), total, '#378ADD'))}
+        ${cCard('Execution Stage', barRows(countBy(leads,'execution_stage'), total, '#7F77DD'))}
+      </div>
+      <div class="dash-grid-2">
+        ${cCard('Final Project Stage', barRows(countBy(leads,'final_project_stage'), total, '#1D9E75'))}
+        ${cCard('Project Overview', [
+          ['Production Completed','production_stage','Production Completed','#1D9E75'],
+          ['Delivered','production_stage','Delivered','#27500A'],
+          ['Installation Completed','execution_stage','Installation Completed','#7F77DD'],
+          ['Client Approved','final_project_stage','Client Approved','#378ADD'],
+          ['Handover Done','final_project_stage','Handover Certificate is Given','#BA7517'],
+        ].map(([label,field,val,color])=>{
+          const count = leads.filter(l=>l[field]===val).length;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9f9f9;border-radius:8px;border-left:3px solid ${color};margin-bottom:6px;">
+            <span style="font-size:13px;color:#1a1a1a;">${label}</span>
+            <span style="font-size:18px;font-weight:700;color:${color};">${count}</span>
+          </div>`;
+        }).join(''))}
+      </div>`;
+  }
+}
+
 
 const COLORS=['#7F77DD','#D85A30','#1D9E75','#BA7517','#378ADD','#639922','#A32D2D','#0C447C','#444441','#633806'];
 function destroyCharts(){Object.values(state.charts).forEach(c=>{try{c.destroy();}catch(e){}});state.charts={};}
