@@ -506,6 +506,17 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
     </div>
   </div>
 
+  <div class="modal hidden" id="modal-drill-down" style="width:900px;max-width:96vw;">
+    <div class="modal-title">
+      <span id="drill-title">Leads</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="exportDrillDown()" class="btn btn-sm" style="font-size:12px;"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
+        <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;font-weight:400;"><i class="ti ti-x"></i></span>
+      </div>
+    </div>
+    <div id="drill-content" style="max-height:65vh;overflow:auto;"></div>
+  </div>
+
 </div>
 
 <script>
@@ -877,25 +888,42 @@ function setDashTab(tab){
 
 function countBy(leads, field){ const r={}; leads.forEach(l=>{const v=l[field]||'—';r[v]=(r[v]||0)+1;}); return r; }
 
-function barRows(obj, total, color){
+function barRows(obj, total, color, leadsArr, field){
   color = color||'#7F77DD';
   const entries = Object.entries(obj).filter(([k])=>k!=='—').sort((a,b)=>b[1]-a[1]);
   if(!entries.length) return '<div style="color:#ccc;font-size:12px;padding:8px 0;">No data yet</div>';
   const max = entries[0][1];
-  return entries.map(([k,v])=>`
-    <div style="margin-bottom:10px;">
+  return entries.map(([k,v])=>{
+    const clickable = leadsArr && field;
+    const clickAttr = clickable ? `onclick="showDrillDown('${k}', drillFilter('${field}','${k}'))" style="cursor:pointer;"` : '';
+    return `<div style="margin-bottom:10px;" ${clickAttr}>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
         <span style="color:#1a1a1a;font-weight:500;">${k}</span>
-        <span style="color:#555;">${v} <span style="color:#aaa;">(${total?Math.round(v/total*100):0}%)</span></span>
+        <span style="color:#555;">${v} <span style="color:#aaa;">(${total?Math.round(v/total*100):0}%)</span>${clickable?` <span style="color:#7F77DD;font-size:10px;">↗</span>`:''}</span>
       </div>
       <div style="background:#f0f0f0;border-radius:99px;height:8px;overflow:hidden;">
         <div style="height:100%;border-radius:99px;background:${color};width:${max?Math.round(v/max*100):0}%;transition:width .4s;"></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
-function sCard(label, value, sub, color){
-  return `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-val" style="color:${color||'#1a1a1a'};">${value}</div>${sub?`<div class="stat-sub">${sub}</div>`:''}</div>`;
+// Store current dash leads for drill-down from bar rows
+let _dashLeads = [];
+function drillFilter(field, value){
+  return _dashLeads.filter(l=>l[field]===value);
+}
+
+function sCard(label, value, sub, color, onclick){
+  const clickStyle = onclick ? 'cursor:pointer;' : '';
+  const clickAttr = onclick ? `onclick="${onclick}"` : '';
+  const hoverStyle = onclick ? `onmouseover="this.querySelector('.stat-val').style.textDecoration='underline'" onmouseout="this.querySelector('.stat-val').style.textDecoration=''"` : '';
+  return `<div class="stat-card" style="${clickStyle}" ${clickAttr} ${hoverStyle}>
+    <div class="stat-label">${label}</div>
+    <div class="stat-val" style="color:${color||'#1a1a1a'};">${value}</div>
+    ${sub?`<div class="stat-sub">${sub}</div>`:''}
+    ${onclick?`<div style="font-size:10px;color:#aaa;margin-top:4px;"><i class="ti ti-eye" style="vertical-align:-1px;"></i> Click to view</div>`:''}
+  </div>`;
 }
 
 function cCard(title, content){
@@ -909,50 +937,53 @@ function renderDashboard(){
 
   if(dashTab==='calling'){
     const leads = getDashLeads(state.leads);
+    _dashLeads = leads;
     const total = leads.length;
     const connected = leads.filter(l=>l.call_status==='Connected').length;
     const qualified = leads.filter(l=>l.connected_call_status==='Lead Qualified').length;
     const fpReceived = leads.filter(l=>l.floor_plan_status==='Received').length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Leads', total, getDateRangeLabel())}
-        ${sCard('Connected', connected, total?Math.round(connected/total*100)+'% of total':'0%', '#1D9E75')}
-        ${sCard('Lead Qualified', qualified, total?Math.round(qualified/total*100)+'% of total':'0%', '#7F77DD')}
-        ${sCard('Floor Plan Received', fpReceived, total?Math.round(fpReceived/total*100)+'% of total':'0%', '#BA7517')}
+        ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', `showDrillDown('All Leads', getDashLeads(state.leads))`)}
+        ${sCard('Connected', connected, total?Math.round(connected/total*100)+'% of total':'0%', '#1D9E75', `showDrillDown('Connected Leads', getDashLeads(state.leads).filter(l=>l.call_status==='Connected'))`)}
+        ${sCard('Lead Qualified', qualified, total?Math.round(qualified/total*100)+'% of total':'0%', '#7F77DD', `showDrillDown('Lead Qualified', getDashLeads(state.leads).filter(l=>l.connected_call_status==='Lead Qualified'))`)}
+        ${sCard('Floor Plan Received', fpReceived, total?Math.round(fpReceived/total*100)+'% of total':'0%', '#BA7517', `showDrillDown('Floor Plan Received', getDashLeads(state.leads).filter(l=>l.floor_plan_status==='Received'))}`)}
       </div>
       <div class="dash-grid-2">
-        ${cCard('Call Status Breakdown', barRows(countBy(leads,'call_status'), total, '#378ADD'))}
-        ${cCard('Connected Call Status', barRows(countBy(leads,'connected_call_status'), total, '#7F77DD'))}
+        ${cCard('Call Status Breakdown', barRows(countBy(leads,'call_status'), total, '#378ADD', leads, 'call_status'))}
+        ${cCard('Connected Call Status', barRows(countBy(leads,'connected_call_status'), total, '#7F77DD', leads, 'connected_call_status'))}
       </div>
       <div class="dash-grid-2">
-        ${cCard('Floor Plan Status', barRows(countBy(leads,'floor_plan_status'), total, '#BA7517'))}
-        ${cCard('Final Lead Status', barRows(countBy(leads,'final_lead_status'), total, '#D85A30'))}
+        ${cCard('Floor Plan Status', barRows(countBy(leads,'floor_plan_status'), total, '#BA7517', leads, 'floor_plan_status'))}
+        ${cCard('Final Lead Status', barRows(countBy(leads,'final_lead_status'), total, '#D85A30', leads, 'final_lead_status'))}
       </div>`;
 
   } else if(dashTab==='bdi'){
     const leads = getDashLeads(getTeamLeads('sales'));
+    _dashLeads = leads;
     const total = leads.length;
     const reqCollected = leads.filter(l=>l.architect_call_status==='Requirement Collected').length;
     const quoted = leads.filter(l=>['Quoted','Quote Accepted'].includes(l.quote_status)).length;
     const paymentCollected = leads.filter(l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)).length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Leads', total, getDateRangeLabel())}
-        ${sCard('Requirements Collected', reqCollected, total?Math.round(reqCollected/total*100)+'% of total':'0%', '#7F77DD')}
-        ${sCard('Quotes Sent', quoted, total?Math.round(quoted/total*100)+'% of total':'0%', '#1D9E75')}
-        ${sCard('Payment Collected', paymentCollected, total?Math.round(paymentCollected/total*100)+'% of total':'0%', '#D85A30')}
+        ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', `showDrillDown('BDI Leads', leads)`  )}
+        ${sCard('Requirements Collected', reqCollected, total?Math.round(reqCollected/total*100)+'% of total':'0%', '#7F77DD', `showDrillDown('Requirements Collected', leads.filter(l=>l.architect_call_status==='Requirement Collected'))`)}
+        ${sCard('Quotes Sent', quoted, total?Math.round(quoted/total*100)+'% of total':'0%', '#1D9E75', `showDrillDown('Quotes Sent', leads.filter(l=>['Quoted','Quote Accepted'].includes(l.quote_status)))`)}
+        ${sCard('Payment Collected', paymentCollected, total?Math.round(paymentCollected/total*100)+'% of total':'0%', '#D85A30', `showDrillDown('Payment Collected', leads.filter(l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)))}`)}
       </div>
       <div class="dash-grid-2">
-        ${cCard('Quote Status', barRows(countBy(leads,'quote_status'), total, '#1D9E75'))}
-        ${cCard('Architect Call Status', barRows(countBy(leads,'architect_call_status'), total, '#7F77DD'))}
+        ${cCard('Quote Status', barRows(countBy(leads,'quote_status'), total, '#1D9E75', leads, 'quote_status'))}
+        ${cCard('Architect Call Status', barRows(countBy(leads,'architect_call_status'), total, '#7F77DD', leads, 'architect_call_status'))}
       </div>
       <div class="dash-grid-2">
-        ${cCard('Payment Status', barRows(countBy(leads,'payment_status'), total, '#BA7517'))}
-        ${cCard('BD Team Lead Status', barRows(countBy(leads,'bd_team_lead_status'), total, '#D85A30'))}
+        ${cCard('Payment Status', barRows(countBy(leads,'payment_status'), total, '#BA7517', leads, 'payment_status'))}
+        ${cCard('BD Team Lead Status', barRows(countBy(leads,'bd_team_lead_status'), total, '#D85A30', leads, 'bd_team_lead_status'))}
       </div>`;
 
   } else if(dashTab==='design'){
     const leads = getDashLeads(getTeamLeads('design'));
+    _dashLeads = leads;
     const total = leads.length;
     const completed = leads.filter(l=>l.final_design_stage==='Design Completed').length;
     const tats = leads.map(l=>parseInt(l.design_tat)).filter(n=>!isNaN(n)&&n>0);
@@ -961,39 +992,40 @@ function renderDashboard(){
     tats.forEach(d=>{ if(d<=7)tatRanges['1-7 days']++; else if(d<=14)tatRanges['8-14 days']++; else if(d<=21)tatRanges['15-21 days']++; else if(d<=30)tatRanges['22-30 days']++; else tatRanges['30+ days']++; });
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Leads', total, getDateRangeLabel())}
-        ${sCard('Design Completed', completed, total?Math.round(completed/total*100)+'% of total':'0%', '#1D9E75')}
+        ${sCard('Total Leads', total, getDateRangeLabel(), '#1a1a1a', `showDrillDown('Design Team Leads', leads)`  )}
+        ${sCard('Design Completed', completed, total?Math.round(completed/total*100)+'% of total':'0%', '#1D9E75', `showDrillDown('Design Completed', leads.filter(l=>l.final_design_stage==='Design Completed'))`)}
         ${sCard('Avg Design TAT', avgTat ? avgTat+' days' : '—', 'Across all tracked leads', '#7F77DD')}
-        ${sCard('Req Connect Done', leads.filter(l=>l.requirement_connect==='Completed').length, '', '#BA7517')}
+        ${sCard('Req Connect Done', leads.filter(l=>l.requirement_connect==='Completed').length, '', '#BA7517', `showDrillDown('Requirement Connect Done', leads.filter(l=>l.requirement_connect==='Completed'))}`)}
       </div>
       <div class="dash-grid-2">
-        ${cCard('Design Stage', barRows(countBy(leads,'design_stage'), total, '#7F77DD'))}
-        ${cCard('Final Design Stage', barRows(countBy(leads,'final_design_stage'), total, '#3C3489'))}
+        ${cCard('Design Stage', barRows(countBy(leads,'design_stage'), total, '#7F77DD', leads, 'design_stage'))}
+        ${cCard('Final Design Stage', barRows(countBy(leads,'final_design_stage'), total, '#3C3489', leads, 'final_design_stage'))}
       </div>
       <div class="dash-grid-2">
-        ${cCard('Requirement Connect', barRows(countBy(leads,'requirement_connect'), total, '#1D9E75'))}
+        ${cCard('Requirement Connect', barRows(countBy(leads,'requirement_connect'), total, '#1D9E75', leads, 'requirement_connect'))}
         ${cCard('Design TAT Distribution', barRows(tatRanges, tats.length, '#BA7517'))}
       </div>`;
 
   } else if(dashTab==='project'){
     const leads = getDashLeads(getTeamLeads('project'));
+    _dashLeads = leads;
     const total = leads.length;
     const handedOver = leads.filter(l=>l.final_project_stage==='Handover Certificate is Given').length;
     const inExecution = leads.filter(l=>l.execution_stage==='Installation In-Progress').length;
     const prodDone = leads.filter(l=>l.production_stage==='Production Completed').length;
     el.innerHTML=`
       <div class="stats-row stats-4" style="margin-bottom:16px;">
-        ${sCard('Total Projects', total, getDateRangeLabel())}
-        ${sCard('Handed Over', handedOver, total?Math.round(handedOver/total*100)+'% complete':'0%', '#1D9E75')}
-        ${sCard('In Execution', inExecution, 'Currently installing', '#7F77DD')}
-        ${sCard('Production Done', prodDone, '', '#BA7517')}
+        ${sCard('Total Projects', total, getDateRangeLabel(), '#1a1a1a', `showDrillDown('All Projects', leads)`  )}
+        ${sCard('Handed Over', handedOver, total?Math.round(handedOver/total*100)+'% complete':'0%', '#1D9E75', `showDrillDown('Handed Over', leads.filter(l=>l.final_project_stage==='Handover Certificate is Given'))`)}
+        ${sCard('In Execution', inExecution, 'Currently installing', '#7F77DD', `showDrillDown('In Execution', leads.filter(l=>l.execution_stage==='Installation In-Progress'))`)}
+        ${sCard('Production Done', prodDone, '', '#BA7517', `showDrillDown('Production Completed', leads.filter(l=>l.production_stage==='Production Completed'))}`)}
       </div>
       <div class="dash-grid-2">
-        ${cCard('Production Stage', barRows(countBy(leads,'production_stage'), total, '#378ADD'))}
-        ${cCard('Execution Stage', barRows(countBy(leads,'execution_stage'), total, '#7F77DD'))}
+        ${cCard('Production Stage', barRows(countBy(leads,'production_stage'), total, '#378ADD', leads, 'production_stage'))}
+        ${cCard('Execution Stage', barRows(countBy(leads,'execution_stage'), total, '#7F77DD', leads, 'execution_stage'))}
       </div>
       <div class="dash-grid-2">
-        ${cCard('Final Project Stage', barRows(countBy(leads,'final_project_stage'), total, '#1D9E75'))}
+        ${cCard('Final Project Stage', barRows(countBy(leads,'final_project_stage'), total, '#1D9E75', leads, 'final_project_stage'))}
         ${cCard('Project Overview', [
           ['Production Completed','production_stage','Production Completed','#1D9E75'],
           ['Delivered','production_stage','Delivered','#27500A'],
