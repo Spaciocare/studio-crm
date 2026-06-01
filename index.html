@@ -575,7 +575,7 @@ const SECTIONS=[
     {key:'requirements',label:'Requirements',type:'multiselect',options:['Foyer','TV Unit','Sofa wall','False Ceiling','Crockery Unit','Pooja Unit','Wardrobes','Vanity Unit','Others']},
     {key:'requirement_comment',label:'Requirement Comment',type:'textarea'},
     {key:'quote_status',label:'Quote Status',type:'select',options:['','Yet to Prepare','Quoted','Quote Accepted','Quote Rejected']},
-    {key:'bd_team_lead_status',label:'BD Team Lead Status',type:'select',options:['','Cold','Warm','Hot','Won','Dead']},
+    {key:'bdi_team_lead_status',label:'BDI Team Lead Status',type:'select',options:['','Cold','Warm','Hot','Won','Dead']},
     {key:'payment_status',label:'Payment Status',type:'select',options:['','10% Received','20% Received','30% Received']},
   ]},
   {title:'General',fields:[
@@ -609,7 +609,7 @@ const ALL_FIELDS=SECTIONS.flatMap(s=>s.fields);
 // Team group default field assignments
 const DEFAULT_GROUPS={
   calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','floor_plan_status','floor_plan_file','comments'],
-  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','bdi_call_date','bdi_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','bd_team_lead_status','payment_status','final_lead_status','comments'],
+  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','bdi_call_date','bdi_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','bdi_team_lead_status','payment_status','final_lead_status','comments'],
   design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','design_tat','requirement_connect','design_stage','final_design_stage','final_quote_status','final_project_value','final_quoted_sqft','comments'],
   project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
 };
@@ -626,7 +626,7 @@ function loadSettings(){
     if(gf){
       state.groupFields=JSON.parse(gf);
       // Migrate old architect field keys to new bdi field keys
-      const keyMap={'architect_call_date':'bdi_call_date','architect_call_status':'bdi_call_status'};
+      const keyMap={'architect_call_date':'bdi_call_date','architect_call_status':'bdi_call_status','bd_team_lead_status':'bdi_team_lead_status'};
       Object.keys(state.groupFields).forEach(team=>{
         state.groupFields[team]=state.groupFields[team].map(k=>keyMap[k]||k);
       });
@@ -1028,7 +1028,7 @@ function renderDashboard(){
       </div>
       <div class="dash-grid-2">
         ${cCard('Payment Status', barRows(countBy(leads,'payment_status'), total, '#BA7517', leads, 'payment_status'))}
-        ${cCard('BD Team Lead Status', barRows(countBy(leads,'bd_team_lead_status'), total, '#D85A30', leads, 'bd_team_lead_status'))}
+        ${cCard('BDI Team Lead Status', barRows(countBy(leads,'bdi_team_lead_status'), total, '#D85A30', leads, 'bdi_team_lead_status'))}
       </div>`;
 
   } else if(dashTab==='design'){
@@ -2164,7 +2164,7 @@ function processImportRows(rows){
       'Quote Status':'quote_status',
       'Comments':'comments',
       'Floor Plan Status':'floor_plan_status',
-      'BD Team Lead Status':'bd_team_lead_status',
+      'BDI Team Lead Status':'bdi_team_lead_status',
       'Design TAT (Days)':'design_tat',
       'Payment Status':'payment_status',
       'Total Quoted Sq.ft':'total_quoted_sqft',
@@ -2354,7 +2354,7 @@ function showDrillDown(title, leads){
   document.getElementById('drill-title').textContent = title + ' (' + leads.length + ')';
 
   const cols = ['name','phone','city','lead_source','call_status','connected_call_status',
-    'floor_plan_status','final_lead_status','bd_team_lead_status','quote_status',
+    'floor_plan_status','final_lead_status','bdi_team_lead_status','quote_status',
     'payment_status','design_stage','final_design_stage','production_stage',
     'execution_stage','final_project_stage','design_tat','created_time'];
 
@@ -2385,7 +2385,7 @@ function showDrillDown(title, leads){
 function exportDrillDown(){
   if(!drillLeads.length){ toast('No data to export'); return; }
   const cols = ['name','phone','city','lead_source','call_status','connected_call_status',
-    'floor_plan_status','final_lead_status','bd_team_lead_status','quote_status',
+    'floor_plan_status','final_lead_status','bdi_team_lead_status','quote_status',
     'payment_status','design_stage','final_design_stage','production_stage',
     'execution_stage','final_project_stage','design_tat','created_time'];
   const headers = cols.map(k=>fieldLabel(k));
