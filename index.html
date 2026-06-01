@@ -1048,26 +1048,22 @@ function renderPipeline(){
 // ── TEAM VIEWS ────────────────────────────────────────────────────────────
 // Stage gate: which leads are visible to each team
 function getTeamLeads(team){
-  if(team==='calling') return state.leads; // Calling sees all leads
+  if(team==='calling') return [...state.leads].sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   if(team==='sales'){
-    // Visible when Connected Call Status = "Lead Qualified"
-    // AND Floor Plan Status = "Received" or "Not Available"
     return state.leads.filter(l=>
       l.connected_call_status==='Lead Qualified' &&
       ['Received','Not Available'].includes(l.floor_plan_status)
-    );
+    ).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   }
   if(team==='design'){
-    // Visible when Payment Status is set (any of 10%, 20%, 30% Received)
-    // OR Quote Status = "30% Payment Collected" (legacy)
     return state.leads.filter(l=>
       ['10% Received','20% Received','30% Received'].includes(l.payment_status) ||
       l.quote_status==='30% Payment Collected'
-    );
+    ).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   }
   if(team==='project'){
-    // Visible when Final Design Stage = "Design Completed"
-    return state.leads.filter(l=>l.final_design_stage==='Design Completed');
+    return state.leads.filter(l=>l.final_design_stage==='Design Completed')
+      .sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   }
   return state.leads;
 }
