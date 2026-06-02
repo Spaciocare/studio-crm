@@ -1134,6 +1134,14 @@ async function deleteQuote(quoteId, leadId){
   renderLeadQuotes(leadId);
 }
 
+// ─── MAKE QUOTE WINDOW ──────────────────────────────────────────────────────
+function openMakeQuoteWindow(leadId){
+  const url = location.origin + '/make-quote.html?lead=' + leadId;
+  const w = window.open(url, 'makeQuote_'+leadId, 'width=1280,height=800,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no');
+  if(w) w.focus();
+}
+
+
 async function init(){
   loadSettings();
   const{data:{session}}=await sb.auth.getSession();
@@ -1886,12 +1894,17 @@ function renderTeamView(team,title){
 
     if(f.type==='select' && !isViewOnly()){
       const bc = val&&BADGE_COLORS[val] ? BADGE_COLORS[val] : 'f5f4f0;color:#888';
+      // "Make Quote" button for BDI quote_status = "Yet to Prepare"
+      const makeQuoteBtn = (k==='quote_status' && val==='Yet to Prepare' && team==='sales')
+        ? `<button onclick="event.stopPropagation();openMakeQuoteWindow('${l.id}')" style="margin-left:6px;padding:3px 9px;border:1px solid #C9A84C;border-radius:6px;background:#1A1A1A;color:#C9A84C;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;"><i class=\"ti ti-file-invoice\" style=\"font-size:11px;\"></i> Make Quote</button>`
+        : '';
       return `<td style="padding:4px 8px;" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;">
         <select onchange="inlineSave('${l.id}','${k}',this.value,'${team}')"
           style="background:#${bc};border:1px solid rgba(0,0,0,0.08);border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;padding:4px 8px;font-family:inherit;outline:none;max-width:170px;">
           <option value="">— select —</option>
           ${(f.options||[]).filter(o=>o).map(o=>`<option value="${o}"${val===o?' selected':''}>${o}</option>`).join('')}
-        </select>
+        </select>${makeQuoteBtn}</div>
       </td>`;
     }
     if(f.type==='select' && isViewOnly()){
