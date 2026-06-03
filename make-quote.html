@@ -193,24 +193,27 @@ let state={lead:null,priceList:[],rooms:[],quoteId:null};
 
 async function sbGet(path){
   try{
-    const r=await fetch(SUPABASE_URL+path,{
+    const sep=path.includes('?')?'&':'?';
+    const url=SUPABASE_URL+path+sep+'apikey='+SUPABASE_KEY;
+    const r=await fetch(url,{
       headers:{
-        'apikey':SUPABASE_KEY,
         'Authorization':'Bearer '+SUPABASE_KEY,
         'Content-Type':'application/json'
       }
     });
-    if(!r.ok){console.warn('sbGet error',r.status,path);return [];}
+    if(!r.ok){console.warn('sbGet error',r.status,url);return [];}
     const d=await r.json();
+    console.log('sbGet result for',path.split('?')[0],':',d);
     return Array.isArray(d)?d:[];
   }catch(e){console.error('sbGet:',e);return [];}
 }
 async function sbPost(path,body){
   try{
-    const r=await fetch(SUPABASE_URL+path,{
+    const sep=path.includes('?')?'&':'?';
+    const url=SUPABASE_URL+path+sep+'apikey='+SUPABASE_KEY;
+    const r=await fetch(url,{
       method:'POST',
       headers:{
-        'apikey':SUPABASE_KEY,
         'Authorization':'Bearer '+SUPABASE_KEY,
         'Content-Type':'application/json',
         'Prefer':'return=representation'
@@ -223,10 +226,11 @@ async function sbPost(path,body){
 }
 async function sbPatch(path,body){
   try{
-    await fetch(SUPABASE_URL+path,{
+    const sep=path.includes('?')?'&':'?';
+    const url=SUPABASE_URL+path+sep+'apikey='+SUPABASE_KEY;
+    await fetch(url,{
       method:'PATCH',
       headers:{
-        'apikey':SUPABASE_KEY,
         'Authorization':'Bearer '+SUPABASE_KEY,
         'Content-Type':'application/json',
         'Prefer':'return=representation'
@@ -247,15 +251,24 @@ async function init(){
   const leadId=params.get('lead');
   if(!leadId){document.body.innerHTML='<div style="padding:40px;text-align:center;color:red;">No lead ID provided.</div>';return;}
 
-  // Load in parallel
-  const [leads,prices,existingQuotes]=await Promise.all([
+  // Load leads and price list first
+  const [leads,prices]=await Promise.all([
     sbGet('/rest/v1/leads?id=eq.'+leadId+'&select=*'),
     sbGet('/rest/v1/price_list?active=eq.true&order=category,name&select=*'),
-    sbGet('/rest/v1/quotes?lead_id=eq.'+leadId+'&order=created_at.desc&select=*')
   ]);
 
-  state.lead=leads[0]||null;
-  state.priceList=prices||[];
+  console.log('Leads raw:', leads);
+  console.log('Prices count:', prices.length);
+
+  state.lead = (leads&&leads.length) ? leads[0] : null;
+  state.priceList = prices||[];
+
+  // Try quotes separately - table may not exist
+  let existingQuotes = [];
+  try{
+    const qr = await sbGet('/rest/v1/quotes?lead_id=eq.'+leadId+'&order=created_at.desc');
+    existingQuotes = Array.isArray(qr) ? qr : [];
+  }catch(e){ console.warn('Quotes table not available:', e); }
 
   const draftQuote=(existingQuotes||[]).find(q=>q.status==='draft');
   if(draftQuote){
