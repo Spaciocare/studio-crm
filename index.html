@@ -218,7 +218,304 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
 .available-pool{display:flex;flex-wrap:wrap;gap:4px;padding:10px;background:#f5f4f0;border-radius:10px;min-height:48px;}
 .pool-chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;margin:2px;transition:all 0.12s;}
 .pool-chip:hover{background:#EEEDFE;color:#3C3489;border-color:#C5C2F6;}
-::-webkit-scrollbar{width:6px;height:6px;}.webkit-scrollbar-track{background:#f1f1f1;border-radius:99px;}::-webkit-scrollbar-thumb{background:#ddd;border-radius:99px;}::-webkit-scrollbar-thumb:hover{background:#bbb;}*{scrollbar-width:thin;scrollbar-color:#ddd #f1f1f1;}</style>
+::-webkit-scrollbar{width:6px;height:6px;}.webkit-scrollbar-track{background:#f1f1f1;border-radius:99px;}::-webkit-scrollbar-thumb{background:#ddd;border-radius:99px;}::-webkit-scrollbar-thumb:hover{background:#bbb;}*{scrollbar-width:thin;scrollbar-color:#ddd #f1f1f1;}
+/* ═══════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — screens < 768px
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Body / overflow */
+  body { overflow: auto; font-size: 14px; }
+  html { overflow: auto; }
+  #view-dashboard,#view-leads,#view-lead-detail,#view-pipeline,
+  #view-calling,#view-sales,#view-design,#view-project,#view-settings {
+    height: auto; overflow: visible;
+  }
+
+  /* ── APP SHELL ── */
+  .app { flex-direction: column; height: auto; min-height: 100vh; overflow: visible; }
+
+  /* ── SIDEBAR → bottom nav bar ── */
+  .sidebar {
+    width: 100%; min-width: unset;
+    position: fixed; bottom: 0; left: 0; right: 0; top: auto;
+    height: 60px; min-height: 60px;
+    flex-direction: row; align-items: center;
+    border-right: none; border-top: 1px solid #333;
+    z-index: 50; overflow: hidden;
+    padding: 0;
+  }
+  .logo { display: none; }
+  .nav-section { display: contents; padding: 0; margin: 0; }
+  .nav-section-label { display: none; }
+  .nav-item {
+    flex: 1; flex-direction: column; gap: 3px;
+    padding: 8px 4px; border-radius: 0;
+    font-size: 9px; text-align: center;
+    justify-content: center; margin-bottom: 0;
+    min-width: 0;
+  }
+  .nav-item i { font-size: 20px; }
+  .nav-item span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar-footer { display: none; }
+
+  /* ── MAIN ── */
+  .main { margin-bottom: 60px; overflow: visible; }
+
+  /* ── TOPBAR ── */
+  .topbar { padding: 10px 14px; flex-wrap: wrap; gap: 6px; }
+  .topbar-title { font-size: 14px; }
+  .topbar-right { gap: 6px; }
+  .btn { padding: 6px 10px; font-size: 12px; }
+  .btn span { display: none; } /* hide button text, keep icons */
+
+  /* ── CONTENT ── */
+  .content { padding: 12px; overflow: visible; }
+
+  /* ── STATS GRID ── */
+  .stats-5, .stats-4 { grid-template-columns: repeat(2, 1fr); }
+  .stat-val { font-size: 20px; }
+
+  /* ── DASHBOARD GRIDS ── */
+  .dash-grid-2, .dash-grid-3 { grid-template-columns: 1fr; }
+
+  /* ── TABLE → card layout on mobile ── */
+  .table-wrap { overflow: visible; background: transparent; border: none; }
+  table { display: none; } /* hide desktop table */
+  .mobile-card-list { display: block; }
+
+  /* ── LEAD DETAIL ── */
+  .field-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .detail-name { font-size: 16px; }
+
+  /* ── MODAL ── */
+  .modal-bg { padding: 0; align-items: flex-end; }
+  .modal {
+    width: 100%; max-width: 100%; border-radius: 20px 20px 0 0;
+    max-height: 92vh; padding: 20px 16px;
+    margin: 0;
+  }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr; }
+
+  /* ── SETTINGS ── */
+  .settings-layout { grid-template-columns: 1fr; }
+  .settings-nav { position: static; display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; }
+  .settings-nav-item { flex: 1; min-width: 80px; text-align: center; font-size: 11px; }
+
+  /* ── PIPELINE ── */
+  .pipeline { flex-direction: column; width: 100%; }
+  .pipe-col { min-width: unset; width: 100%; }
+
+  /* ── INLINE TABLE → cards ── */
+  .team-view-table { display: none !important; }
+}
+
+/* ── MOBILE LEAD CARDS ── */
+.mobile-card-list { display: none; }
+.m-lead-card {
+  background: #fff; border-radius: 12px; border: 1px solid #eee;
+  padding: 14px; margin-bottom: 10px; cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.m-lead-card:active { background: #f9f8f5; }
+.m-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.m-card-name { font-size: 15px; font-weight: 700; color: #1A1A1A; }
+.m-card-badge { }
+.m-card-row { display: flex; gap: 16px; margin-bottom: 5px; }
+.m-card-field { flex: 1; }
+.m-card-label { font-size: 10px; color: #aaa; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.m-card-val { font-size: 12px; color: #1A1A1A; font-weight: 500; margin-top: 1px; }
+.m-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
+.m-card-meta { font-size: 11px; color: #aaa; }
+.m-card-action { display: flex; gap: 6px; }
+.m-action-btn {
+  border: 1px solid #ddd; border-radius: 8px; background: #fff;
+  padding: 5px 10px; font-size: 12px; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 4px; color: #1A1A1A;
+}
+
+/* ── MOBILE TEAM VIEW CARDS ── */
+.m-team-card {
+  background: #fff; border-radius: 12px; border: 1px solid #eee;
+  padding: 14px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.m-team-card-name { font-size: 15px; font-weight: 700; margin-bottom: 10px; color: #1A1A1A; }
+.m-field-row { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+.m-field-label { font-size: 10px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.m-field-val { font-size: 13px; color: #1A1A1A; }
+.m-select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; }
+.m-note-btn { width: 100%; padding: 10px; border: 1px dashed #C9A84C; border-radius: 8px; background: transparent; color: #C9A84C; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* ── MOBILE BOTTOM SHEET for add note ── */
+.mobile-fab {
+  display: none;
+  position: fixed; bottom: 72px; right: 16px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: #C9A84C; color: #1A1A1A;
+  border: none; cursor: pointer; font-size: 22px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  align-items: center; justify-content: center;
+  z-index: 49;
+}
+@media (max-width: 767px) {
+  .mobile-fab { display: flex; }
+}
+
+/* ── MOBILE SEARCH BAR ── */
+.mobile-search-bar {
+  display: none;
+  padding: 10px 12px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  position: sticky; top: 0; z-index: 10;
+}
+.mobile-search-bar input {
+  width: 100%; padding: 9px 14px 9px 36px;
+  border: 1px solid #ddd; border-radius: 10px;
+  font-size: 14px; font-family: inherit; outline: none;
+  background: #f9f8f5;
+}
+.mobile-search-bar .msearch-icon {
+  position: absolute; left: 24px; top: 50%; transform: translateY(-50%);
+  color: #aaa; font-size: 16px; pointer-events: none;
+}
+.mobile-search-wrap { position: relative; }
+@media (max-width: 767px) {
+  .mobile-search-bar { display: block; }
+  .topbar { position: sticky; top: 0; z-index: 20; }
+}
+
+/* ── DASHBOARD MOBILE STATS ── */
+@media (max-width: 480px) {
+  .stats-5, .stats-4 { grid-template-columns: 1fr 1fr; }
+  .stat-card { padding: 10px 12px; }
+  .stat-val { font-size: 18px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   ENHANCED MOBILE — v2
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── MOBILE NAV: show text labels properly ── */
+@media (max-width: 767px) {
+  /* Limit nav items to the 5 most important */
+  .nav-item { font-size: 9px; letter-spacing: -.01em; }
+
+  /* Dashboard tabs scroll horizontally on mobile */
+  #dash-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; padding-bottom: 2px; }
+  #dash-tabs .tab { white-space: nowrap; flex-shrink: 0; }
+
+  /* Dashboard date filter stack */
+  #dash-filter-row { flex-direction: column; gap: 8px; align-items: stretch !important; }
+  #dash-filter-row > * { width: 100%; }
+
+  /* Stat cards: 2-column always */
+  .stats-5, .stats-4 { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .stat-card { padding: 12px; }
+  .stat-val { font-size: 20px; }
+
+  /* Dashboard chart cards: single column */
+  .dash-grid-2, .dash-grid-3 { grid-template-columns: 1fr !important; gap: 10px; }
+  .chart-card { padding: 12px; }
+
+  /* Lead detail field grid: 2 col on mobile */
+  .field-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+
+  /* Lead detail topbar actions: icon-only */
+  #lead-detail-actions .btn span { display: none; }
+  .topbar .btn span { display: none; }
+  #lead-detail-actions { gap: 6px; flex-wrap: wrap; }
+
+  /* Make Quote button on mobile team cards: full-width */
+  .m-make-quote-btn {
+    width: 100%; margin-top: 8px; padding: 10px;
+    border: 1px solid #C9A84C; border-radius: 8px;
+    background: #1A1A1A; color: #C9A84C;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: inherit; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+  }
+
+  /* Note button on mobile team cards */
+  .m-note-btn { font-size: 13px; padding: 10px; margin-top: 6px; }
+
+  /* Fix topbar on small screens */
+  .topbar { padding: 10px 12px; gap: 6px; }
+  .topbar-title { font-size: 13px; }
+  .btn { padding: 6px 10px; font-size: 12px; gap: 4px; }
+
+  /* Mobile team card improvements */
+  .m-team-card { padding: 14px; border-radius: 12px; }
+  .m-team-card-name { font-size: 15px; font-weight: 700; }
+  .m-field-row { margin-bottom: 10px; }
+  .m-field-label { font-size: 10px; margin-bottom: 3px; }
+  .m-select { font-size: 14px; padding: 9px 12px; border-radius: 8px; }
+
+  /* Mobile lead cards */
+  .m-lead-card { padding: 14px; }
+  .m-card-name { font-size: 15px; }
+
+  /* Filter bar horizontal scroll */
+  .filter-bar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .filter-select { flex-shrink: 0; }
+
+  /* Modal improvements */
+  .modal { padding: 18px 14px 24px; }
+  .modal-title { font-size: 15px; }
+  .form-section-title { font-size: 10px; }
+
+  /* Pipeline horizontal scroll */
+  .pipeline { flex-direction: row; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .pipe-col { min-width: 260px; max-width: 280px; flex-shrink: 0; }
+
+  /* Search bar full width */
+  .mobile-search-bar { padding: 10px 12px; }
+  .mobile-search-bar input { font-size: 14px; padding: 10px 14px 10px 38px; }
+
+  /* Hide desktop-only elements */
+  .desk-only { display: none !important; }
+
+  /* Content padding */
+  .content { padding: 10px 10px 80px; }
+
+  /* Team view search */
+  #mobile-team-search-sales,
+  #mobile-team-search-project,
+  #mobile-team-search-calling,
+  #mobile-team-search-design { font-size: 14px; }
+
+  /* Add note modal full screen feel */
+  .modal-bg { padding: 0 !important; align-items: flex-end; }
+  .modal { border-radius: 20px 20px 0 0 !important; margin: 0; }
+
+  /* Details section tabs scroll */
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .tab { white-space: nowrap; flex-shrink: 0; }
+
+  /* Settings panels stack */
+  .settings-layout { grid-template-columns: 1fr !important; }
+  .settings-nav { flex-wrap: wrap; gap: 4px; }
+  .settings-nav-item { font-size: 11px; padding: 6px 10px; text-align: center; flex: 1; min-width: 70px; }
+
+  /* FAB button position above nav */
+  .mobile-fab { bottom: 70px; }
+
+  /* Info blocks in detail view */
+  .info-block { padding: 10px; }
+  .info-val { font-size: 12px; }
+}
+
+/* Extra small phones */
+@media (max-width: 380px) {
+  .nav-item { font-size: 8px; padding: 6px 2px; }
+  .nav-item i { font-size: 18px; }
+  .stats-5, .stats-4 { grid-template-columns: 1fr 1fr !important; }
+  .field-grid { grid-template-columns: 1fr !important; }
+  .m-card-row { flex-direction: column; gap: 6px; }
+}
+</style>
 </head>
 <body>
 <div id="auth-screen" class="auth-wrap">
@@ -273,14 +570,14 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
       <div class="topbar" style="flex-wrap:wrap;gap:8px;">
         <span class="topbar-title">Dashboard</span>
         <div class="topbar-right" style="flex-wrap:wrap;gap:8px;">
-          <div style="display:flex;align-items:center;gap:6px;">
+          <div id="dash-filter-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <label style="font-size:12px;color:#888;font-weight:500;">From</label>
             <input type="date" id="dash-from" onchange="renderDashboard()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;font-size:12px;font-family:inherit;outline:none;color:#1a1a1a;">
             <label style="font-size:12px;color:#888;font-weight:500;">To</label>
             <input type="date" id="dash-to" onchange="renderDashboard()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;font-size:12px;font-family:inherit;outline:none;color:#1a1a1a;">
             <button onclick="clearDashDates()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;color:#888;cursor:pointer;font-family:inherit;">Clear</button>
           </div>
-          <div style="display:flex;gap:4px;background:#f5f4f0;border-radius:10px;padding:4px;">
+          <div id="dash-tabs" style="display:flex;gap:4px;background:#f5f4f0;border-radius:10px;padding:4px;overflow-x:auto;">
             <button id="tab-calling" onclick="setDashTab('calling')" class="dash-tab active" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:#1a1a1a;color:#fff;">Calling</button>
             <button id="tab-bdi" onclick="setDashTab('bdi')" class="dash-tab" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:transparent;color:#888;">BDI Team</button>
             <button id="tab-design" onclick="setDashTab('design')" class="dash-tab" style="padding:6px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;background:transparent;color:#888;">Design</button>
@@ -307,18 +604,25 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
           <button onclick="bulkDeleteLeads()" style="padding:7px 14px;border-radius:8px;border:none;background:#A32D2D;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;"><i class="ti ti-trash"></i> Delete selected</button>
           <button onclick="clearSelection()" style="padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:13px;color:#666;cursor:pointer;font-family:inherit;">Cancel</button>
         </div>
+        <div class="mobile-search-bar">
+          <div class="mobile-search-wrap">
+            <i class="ti ti-search msearch-icon"></i>
+            <input type="text" placeholder="🔍 Search leads..." id="mobile-leads-search" oninput="renderLeads()" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#f9f8f5;">
+          </div>
+        </div>
         <div id="leads-table-wrap" class="table-wrap"><table><thead><tr id="leads-thead"></tr></thead><tbody id="leads-tbody"></tbody></table></div>
+        <div id="mobile-leads-cards" class="mobile-card-list"></div>
       </div>
     </div>
 
     <!-- LEAD DETAIL -->
     <div id="view-lead-detail" class="hidden">
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#888;" onclick="switchView('leads')"><i class="ti ti-arrow-left"></i> Back to leads</div>
-        <div class="topbar-right" id="lead-detail-actions">
-          <button class="btn" id="btn-edit-lead" onclick="openEditLead()"><i class="ti ti-edit"></i> Edit</button>
-          <button class="btn btn-danger" id="btn-delete-lead" onclick="deleteLead()"><i class="ti ti-trash"></i> Delete</button>
-          <button class="btn btn-primary" id="btn-add-note" onclick="openModal('add-note')"><i class="ti ti-message"></i> Add note</button>
+        <div style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#888;" onclick="switchView('leads')"><i class="ti ti-arrow-left"></i> <span class="desk-only">Back to leads</span></div>
+        <div class="topbar-right" id="lead-detail-actions" style="flex-wrap:wrap;">
+          <button class="btn" id="btn-edit-lead" onclick="openEditLead()"><i class="ti ti-edit"></i> <span>Edit</span></button>
+          <button class="btn btn-danger" id="btn-delete-lead" onclick="deleteLead()"><i class="ti ti-trash"></i></button>
+          <button class="btn btn-primary" id="btn-add-note" onclick="openModal('add-note')"><i class="ti ti-message"></i> <span>Add note</span></button>
         </div>
       </div>
       <div class="content" id="lead-detail-content"></div>
@@ -1700,6 +2004,46 @@ function renderLeads(){
     </td>
   </tr>`).join('');
   if(isAdmin()) updateBulkBar();
+  renderMobileLeadCards(leads);
+}
+
+function renderMobileLeadCards(leads){
+  const el = document.getElementById('mobile-leads-cards');
+  if(!el) return;
+  const mq = document.getElementById('mobile-leads-search');
+  let filtered = leads;
+  if(mq && mq.value.trim()){
+    const q = mq.value.trim().toLowerCase();
+    filtered = leads.filter(l=>(l.name||'').toLowerCase().includes(q)||(l.phone||'').toLowerCase().includes(q)||(l.city||'').toLowerCase().includes(q));
+  }
+  if(!filtered.length){
+    el.innerHTML='<div class="empty">No leads found.</div>';return;
+  }
+  el.innerHTML = filtered.map(l=>{
+    const status = l.final_lead_status||'';
+    const statusColors = {Hot:'#FAECE7;color:#712B13',Warm:'#FAEEDA;color:#633806',Cold:'#E6F1FB;color:#0C447C',Won:'#EAF3DE;color:#27500A',Dead:'#F1EFE8;color:#555'};
+    const sc = statusColors[status]||'#f5f4f0;color:#888';
+    return `<div class="m-lead-card" onclick="handleLeadsRowClick(event,'${l.id}')">
+      <div class="m-card-top">
+        <div class="m-card-name">${l.name||'—'}</div>
+        ${status?`<span class="badge" style="background:#${sc};font-size:11px;">${status}</span>`:''}
+      </div>
+      <div class="m-card-row">
+        <div class="m-card-field"><div class="m-card-label">Phone</div><div class="m-card-val"><a href="tel:${l.phone}" style="color:#1A1A1A;text-decoration:none;" onclick="event.stopPropagation()">${l.phone||'—'}</a></div></div>
+        <div class="m-card-field"><div class="m-card-label">City</div><div class="m-card-val">${l.city||'—'}</div></div>
+      </div>
+      <div class="m-card-row">
+        <div class="m-card-field"><div class="m-card-label">Property</div><div class="m-card-val">${l.property_type||'—'}</div></div>
+        <div class="m-card-field"><div class="m-card-label">Budget</div><div class="m-card-val">${l.interior_budget||'—'}</div></div>
+      </div>
+      <div class="m-card-footer">
+        <div class="m-card-meta">${fmtDate(l.created_at||'')}</div>
+        <div class="m-card-action">
+          ${!isViewOnly()?`<button class="m-action-btn" onclick="event.stopPropagation();openLeadEdit('${l.id}')"><i class="ti ti-edit"></i></button>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function fieldLabel(key){const f=ALL_FIELDS.find(x=>x.key===key);return f?f.label:key.replace(/_/g,' ');}
@@ -1935,7 +2279,10 @@ function renderTeamView(team,title){
       <span>${gate.msg} &nbsp;·&nbsp; <strong>${leads.length} lead${leads.length!==1?'s':''}</strong></span>
     </div>
     ${!isViewOnly()?'<div style="font-size:11px;color:#aaa;margin-bottom:8px;padding-left:4px;"><i class="ti ti-edit" style="vertical-align:-2px;"></i> Dropdowns save instantly · Text fields: press Enter or click away to save · Click name to open full detail</div>':''}
-    <div class="table-wrap">
+    <div style="padding:10px 0 6px;margin-bottom:4px;">
+      <input type="text" placeholder="🔍 Search by name, phone, city..." id="mobile-team-search-${team}" oninput="renderMobileTeamCards('${team}')" style="width:100%;padding:11px 16px;border:1px solid #ddd;border-radius:12px;font-size:14px;font-family:inherit;outline:none;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+    </div>
+    <div class="table-wrap team-view-table">
       <table>
         <thead><tr>${fields.map(k=>`<th style="white-space:nowrap;background:#1A1A1A;color:#C9A84C;padding:10px 12px;border-bottom:2px solid #C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">${fieldLabel(k)}</th>`).join('')}</tr></thead>
         <tbody>
@@ -1945,8 +2292,123 @@ function renderTeamView(team,title){
             </tr>`).join('') : `<tr><td colspan="${fields.length}" class="empty">No leads yet.</td></tr>`}
         </tbody>
       </table>
-    </div>`;
+    </div>
+    <div id="mobile-quickstats-${team}" style="display:none;"></div>
+    <div id="mobile-team-cards-${team}" class="mobile-card-list"></div>`;
+  renderMobileTeamCards(team);
+  renderMobileQuickStats(team);
 }
+
+function renderMobileQuickStats(team){
+  const el = document.getElementById('mobile-quickstats-'+team);
+  if(!el) return;
+  // Only show on mobile
+  if(window.innerWidth > 767){ el.style.display='none'; return; }
+  const leads = getTeamLeads(team);
+  const total = leads.length;
+  if(!total){ el.style.display='none'; return; }
+  let stats = [];
+  if(team==='sales'){
+    const ytp = leads.filter(l=>l.quote_status==='Yet to Prepare').length;
+    const quoted = leads.filter(l=>['Quoted','Quote Accepted'].includes(l.quote_status)).length;
+    const paid = leads.filter(l=>['10% Received','20% Received','30% Received'].includes(l.payment_status)).length;
+    stats = [
+      {label:'Total',val:total,color:'#1A1A1A'},
+      {label:'To Quote',val:ytp,color:'#BA7517'},
+      {label:'Quoted',val:quoted,color:'#1D9E75'},
+      {label:'Payment ✓',val:paid,color:'#7F77DD'},
+    ];
+  } else if(team==='project'){
+    const inExec = leads.filter(l=>l.execution_stage&&l.execution_stage!=='').length;
+    const completed = leads.filter(l=>l.final_project_stage==='Completed').length;
+    stats = [
+      {label:'Total',val:total,color:'#1A1A1A'},
+      {label:'In Execution',val:inExec,color:'#BA7517'},
+      {label:'Completed',val:completed,color:'#1D9E75'},
+    ];
+  } else {
+    el.style.display='none'; return;
+  }
+  el.style.display='block';
+  const statCards = stats.map(s=>'<div style="background:#fff;border-radius:10px;padding:10px 8px;text-align:center;border:1px solid #eee;"><div style="font-size:20px;font-weight:800;color:'+s.color+';">'+s.val+'</div><div style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;margin-top:2px;">'+s.label+'</div></div>').join('');
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat('+stats.length+',1fr);gap:8px;margin-bottom:12px;">'+statCards+'</div>';
+}
+
+
+function renderMobileTeamCards(team){
+  const el = document.getElementById('mobile-team-cards-'+team);
+  if(!el) return;
+  let leads = getTeamLeads(team);
+  const sq = document.getElementById('mobile-team-search-'+team);
+  if(sq && sq.value.trim()){
+    const q = sq.value.trim().toLowerCase();
+    leads = leads.filter(l=>(l.name||'').toLowerCase().includes(q)||(l.phone||'').toLowerCase().includes(q)||(l.city||'').toLowerCase().includes(q));
+  }
+  const fields = state.groupFields[team]||[];
+  const keyFields = fields.filter(k=>!['name'].includes(k)).slice(0,4);
+
+  const BADGE_COLORS2={
+    'Hot':'#FAECE7;color:#712B13','Warm':'#FAEEDA;color:#633806','Cold':'#E6F1FB;color:#0C447C',
+    'Won':'#EAF3DE;color:#27500A','Dead':'#F1EFE8;color:#555',
+    'Lead Qualified':'#EAF3DE;color:#27500A','Lead Not Qualified':'#FAECE7;color:#712B13',
+    'Call Back':'#EEEDFE;color:#3C3489',
+    'Quoted':'#EAF3DE;color:#27500A','Yet to Prepare':'#FAEEDA;color:#633806',
+    'Quote Accepted':'#EAF3DE;color:#27500A','Quote Rejected':'#FAECE7;color:#712B13',
+    'Received':'#EAF3DE;color:#27500A','Not Received':'#FAECE7;color:#712B13',
+    'Requirement Collected':'#EAF3DE;color:#27500A','Not Connected':'#FAECE7;color:#712B13',
+    '10% Received':'#FAEEDA;color:#633806','20% Received':'#EEEDFE;color:#3C3489','30% Received':'#EAF3DE;color:#27500A',
+  };
+
+  if(!leads.length){el.innerHTML='<div class="empty">No leads in this view.</div>';return;}
+  el.innerHTML = leads.map(l=>{
+    const f = ALL_FIELDS;
+    return `<div class="m-team-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;" onclick="openLead('${l.id}')">
+        <div class="m-team-card-name" style="margin-bottom:0;">${l.name||'—'}</div>
+        <i class="ti ti-chevron-right" style="color:#aaa;font-size:14px;"></i>
+      </div>
+      ${keyFields.map(k=>{
+        const field = f.find(x=>x.key===k);
+        if(!field) return '';
+        const val = l[k]||'';
+        if(field.type==='select'){
+          if(isViewOnly()){
+            const bc = val&&BADGE_COLORS2[val]?BADGE_COLORS2[val]:'f5f4f0;color:#888';
+            return `<div class="m-field-row">
+              <div class="m-field-label">${field.label}</div>
+              <span class="badge" style="background:#${bc};font-size:11px;">${val||'—'}</span>
+            </div>`;
+          }
+          const bc = val&&BADGE_COLORS2[val]?BADGE_COLORS2[val]:'f5f4f0;color:#888';
+          const makeQuoteBtn = (k==='quote_status' && val==='Yet to Prepare' && team==='sales')
+            ? `<button onclick="event.stopPropagation();openMakeQuoteWindow('${l.id}')" style="margin-top:6px;width:100%;padding:8px;border:1px solid #C9A84C;border-radius:8px;background:#1A1A1A;color:#C9A84C;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;"><i class="ti ti-file-invoice"></i> Make Quote</button>` : '';
+          return `<div class="m-field-row">
+            <div class="m-field-label">${field.label}</div>
+            <select class="m-select" style="background:#${bc};" onchange="inlineSave('${l.id}','${k}',this.value,'${team}');renderMobileTeamCards('${team}')">
+              <option value="">— select —</option>
+              ${(field.options||[]).filter(o=>o).map(o=>`<option value="${o}"${val===o?' selected':''}>${o}</option>`).join('')}
+            </select>${makeQuoteBtn}
+          </div>`;
+        }
+        if(field.type==='multiselect'){
+          return `<div class="m-field-row"><div class="m-field-label">${field.label}</div><div class="m-field-val">${(val||[]).join(', ')||'—'}</div></div>`;
+        }
+        if(field.type==='date'){
+          return `<div class="m-field-row">
+            <div class="m-field-label">${field.label}</div>
+            <input type="date" value="${val}" class="m-select" onchange="inlineSave('${l.id}','${k}',this.value,'${team}');renderMobileTeamCards('${team}')">
+          </div>`;
+        }
+        const displayVal = (k==='phone' && val) ? '<a href="tel:'+val+'" style="color:#1A1A1A;text-decoration:none;font-size:15px;font-weight:600;" onclick="event.stopPropagation()">'+val+'</a>' : (val||'—');
+        return '<div class="m-field-row"><div class="m-field-label">'+field.label+'</div><div class="m-field-val">'+displayVal+'</div></div>';
+      }).join('')}
+      <button class="m-note-btn" onclick="state.selectedLead='${l.id}';openModal('add-note')">
+        <i class="ti ti-notes"></i> Add Note
+      </button>
+    </div>`;
+  }).join('');
+}
+
 
 async function inlineFileUpload(leadId, input, team){
   if(!input.files || !input.files[0]) return;
