@@ -199,12 +199,17 @@ async function sb(path,opts={}){
         'Authorization':'Bearer '+SUPABASE_KEY,
         'Content-Type':'application/json',
         'Accept':'application/json',
+        'Accept-Profile':'public',
+        'Content-Profile':'public',
         'Prefer':'return=representation'
       },...opts
     });
     const text=await r.text();
     if(!text)return [];
-    return JSON.parse(text);
+    const parsed=JSON.parse(text);
+    // Supabase returns error objects on failure - return [] so .find() never breaks
+    if(!Array.isArray(parsed)){console.warn('sb non-array:',parsed);return [];}
+    return parsed;
   }catch(e){
     console.error('sb error:',e);
     return [];
@@ -221,7 +226,7 @@ async function init(){
   const [leads,prices,existingQuotes]=await Promise.all([
     sb('/rest/v1/leads?id=eq.'+leadId+'&select=*'),
     sb('/rest/v1/price_list?active=eq.true&order=category,name&select=*'),
-    sb('/rest/v1/quotes?lead_id=eq.'+leadId+'&order=created_at.desc&limit=5&select=*')
+    sb('/rest/v1/quotes?lead_id=eq.'+leadId+'&order=created_at.desc&select=*')
   ]);
 
   state.lead=leads[0]||null;
