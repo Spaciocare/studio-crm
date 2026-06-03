@@ -191,29 +191,54 @@ const LOGO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEBLAEsAAD/7gAOQWRvYmUAZAAAA
 
 let state={lead:null,priceList:[],rooms:[],quoteId:null};
 
-async function sb(path,opts={}){
+async function sbGet(path){
   try{
     const r=await fetch(SUPABASE_URL+path,{
       headers:{
         'apikey':SUPABASE_KEY,
         'Authorization':'Bearer '+SUPABASE_KEY,
-        'Content-Type':'application/json',
-        'Accept':'application/json',
-        'Accept-Profile':'public',
-        'Content-Profile':'public',
-        'Prefer':'return=representation'
-      },...opts
+        'Content-Type':'application/json'
+      }
     });
-    const text=await r.text();
-    if(!text)return [];
-    const parsed=JSON.parse(text);
-    // Supabase returns error objects on failure - return [] so .find() never breaks
-    if(!Array.isArray(parsed)){console.warn('sb non-array:',parsed);return [];}
-    return parsed;
-  }catch(e){
-    console.error('sb error:',e);
-    return [];
-  }
+    if(!r.ok){console.warn('sbGet error',r.status,path);return [];}
+    const d=await r.json();
+    return Array.isArray(d)?d:[];
+  }catch(e){console.error('sbGet:',e);return [];}
+}
+async function sbPost(path,body){
+  try{
+    const r=await fetch(SUPABASE_URL+path,{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer '+SUPABASE_KEY,
+        'Content-Type':'application/json',
+        'Prefer':'return=representation'
+      },
+      body:JSON.stringify(body)
+    });
+    const d=await r.json();
+    return Array.isArray(d)?d:[d];
+  }catch(e){console.error('sbPost:',e);return [];}
+}
+async function sbPatch(path,body){
+  try{
+    await fetch(SUPABASE_URL+path,{
+      method:'PATCH',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer '+SUPABASE_KEY,
+        'Content-Type':'application/json',
+        'Prefer':'return=representation'
+      },
+      body:JSON.stringify(body)
+    });
+  }catch(e){console.error('sbPatch:',e);}
+}
+// Legacy alias
+async function sb(path,opts={}){
+  if(!opts.method||opts.method==='GET') return sbGet(path);
+  return [];
 }
 
 // ─── INIT ───────────────────────────────────────────────────────────────────
@@ -224,9 +249,9 @@ async function init(){
 
   // Load in parallel
   const [leads,prices,existingQuotes]=await Promise.all([
-    sb('/rest/v1/leads?id=eq.'+leadId+'&select=*'),
-    sb('/rest/v1/price_list?active=eq.true&order=category,name&select=*'),
-    sb('/rest/v1/quotes?lead_id=eq.'+leadId+'&order=created_at.desc&select=*')
+    sbGet('/rest/v1/leads?id=eq.'+leadId+'&select=*'),
+    sbGet('/rest/v1/price_list?active=eq.true&order=category,name&select=*'),
+    sbGet('/rest/v1/quotes?lead_id=eq.'+leadId+'&order=created_at.desc&select=*')
   ]);
 
   state.lead=leads[0]||null;
@@ -434,11 +459,11 @@ async function buildPayload(status){
 async function saveDraft(){
   const payload=await buildPayload('draft');
   if(state.quoteId){
-    await sb('/rest/v1/quotes?id=eq.'+state.quoteId,{method:'PATCH',body:JSON.stringify(payload)});
+    await sbPatch('/rest/v1/quotes?id=eq.'+state.quoteId,payload);
   } else {
     const ts=Date.now().toString().slice(-6);
     payload.quote_number='Q-'+ts;
-    const data=await sb('/rest/v1/quotes',{method:'POST',body:JSON.stringify(payload)});
+    const data=await sbPost('/rest/v1/quotes',payload);
     state.quoteId=data[0]?.id;
   }
   showToast('✓ Draft saved!');
@@ -452,10 +477,10 @@ async function publishQuote(){
   if(!state.quoteId){
     const ts=Date.now().toString().slice(-6);
     payload.quote_number='Q-'+ts;
-    const data=await sb('/rest/v1/quotes',{method:'POST',body:JSON.stringify(payload)});
+    const data=await sbPost('/rest/v1/quotes',payload);
     state.quoteId=data[0]?.id;
   } else {
-    await sb('/rest/v1/quotes?id=eq.'+state.quoteId,{method:'PATCH',body:JSON.stringify(payload)});
+    await sbPatch('/rest/v1/quotes?id=eq.'+state.quoteId,payload);
   }
   if(!state.quoteId){alert('Error saving quote. Please try again.');return;}
   const link=location.origin+'/quote.html?id='+state.quoteId;
