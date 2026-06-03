@@ -151,16 +151,23 @@ async function init() {
   G.lead = leads[0] || null;
   G.priceList = prices || [];
 
-  // Try quotes
+  // Load specific quote if ?quote= param given, else load latest draft
+  const specificQuoteId = new URLSearchParams(location.search).get('quote');
   try {
     const quotes = await api('quotes?lead_id=eq.' + leadId + '&order=created_at.desc');
-    const draft = (quotes || []).find(q => q.status === 'draft');
-    if (draft) {
-      G.quoteId = draft.id;
-      G.rooms = draft.rooms || [];
-      document.getElementById('q-discount').value = draft.discount || 0;
-      document.getElementById('q-notes').value = draft.notes || '';
-      if (draft.valid_till) document.getElementById('q-valid-till').value = draft.valid_till;
+    let target = null;
+    if(specificQuoteId) {
+      target = (quotes||[]).find(q=>q.id===specificQuoteId);
+    } else {
+      target = (quotes||[]).find(q=>q.status==='draft');
+    }
+    if (target) {
+      G.quoteId = target.id;
+      G.rooms = target.rooms || [];
+      document.getElementById('q-discount').value = target.discount || 0;
+      document.getElementById('q-notes').value = target.notes || '';
+      if (target.valid_till) document.getElementById('q-valid-till').value = target.valid_till;
+      document.getElementById('topbar-title').textContent = 'Make Quote — ' + (G.lead ? (G.lead.name || '') : '') + (target.quote_number ? ' · ' + target.quote_number : '');
     }
   } catch(e) { console.warn('Quotes not available:', e); }
 
@@ -355,9 +362,11 @@ async function saveDraft() {
   if (G.quoteId) {
     await api('quotes?id=eq.' + G.quoteId, 'PATCH', payload);
   } else {
-    payload.quote_number = 'Q-' + Date.now().toString().slice(-6);
+    const d = new Date();
+    const dateStr = d.getDate()+'/'+(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(-2);
+    payload.quote_number = 'Quote - ' + dateStr;
     const data = await api('quotes', 'POST', payload);
-    if (data[0]) G.quoteId = data[0].id;
+    if (data[0]) { G.quoteId = data[0].id; document.title = 'Make Quote — ' + payload.quote_number; }
   }
   toast('✓ Draft saved!');
 }
