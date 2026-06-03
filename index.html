@@ -962,6 +962,7 @@ const SECTIONS=[
   {title:'BDI Team',fields:[
     {key:'bdi_call_date',label:'BDI Call Date',type:'date'},
     {key:'bdi_call_status',label:'BDI Call Status',type:'select',options:['','Requirement Collected','Not Connected','Partially Collected']},
+    {key:'quote_preparation',label:'Quote Preparation',type:'special'},
     {key:'requirements',label:'Requirements',type:'multiselect',options:['Foyer','TV Unit','Sofa wall','False Ceiling','Crockery Unit','Pooja Unit','Wardrobes','Vanity Unit','Others']},
     {key:'requirement_comment',label:'Requirement Comment',type:'textarea'},
     {key:'quote_status',label:'Quote Status',type:'select',options:['','Yet to Prepare','Quoted','Quote Accepted','Quote Rejected']},
@@ -999,7 +1000,7 @@ const ALL_FIELDS=SECTIONS.flatMap(s=>s.fields);
 // Team group default field assignments
 const DEFAULT_GROUPS={
   calling:['name','phone','whatsapp','email','city','lead_source','is_organic','final_lead_status','first_call_date','recent_call_date','call_status','connected_call_status','floor_plan_status','floor_plan_file','comments'],
-  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','bdi_call_date','bdi_call_status','requirements','requirement_comment','quote_status','total_quoted_sqft','bdi_team_lead_status','payment_status','final_lead_status','comments'],
+  sales:['name','phone','city','property_type','property_segment','property_specification','interior_budget','expected_handover_date','builder_name','project_name','bdi_call_date','bdi_call_status','requirements','requirement_comment','quote_preparation','quote_status','total_quoted_sqft','bdi_team_lead_status','payment_status','final_lead_status','comments'],
   design:['name','phone','city','property_type','property_segment','property_specification','interior_budget','requirements','requirement_comment','design_tat','requirement_connect','design_stage','final_design_stage','final_quote_status','final_project_value','final_quoted_sqft','comments'],
   project:['name','phone','city','property_type','property_segment','property_specification','builder_name','project_name','unit_street','location_area','pincode','expected_handover_date','production_stage','estimated_production_date','estimated_delivery_date','execution_start_date','execution_end_date','execution_stage','final_project_stage','final_lead_status','comments'],
 };
@@ -2383,19 +2384,17 @@ function renderTeamView(team,title){
       </td>`;
     }
     if(k==='design_tat') return `<td style="padding:8px 12px;"><span style="color:#7F77DD;font-weight:600;">${val||'—'}</span></td>`;
+    if(k==='quote_preparation'){
+      const reqDone = l.bdi_call_status==='Requirement Collected';
+      const hasReqs = l.requirements && l.requirements.length>0;
+      return `<td style="padding:6px 10px;min-width:160px;" onclick="event.stopPropagation()">
+        ${(reqDone && hasReqs) ? renderMakeQuoteButtons(l) : '<span style="color:#ddd;font-size:11px;">—</span>'}
+      </td>`;
+    }
     if(f.type==='multiselect') return `<td style="padding:8px 12px;font-size:12px;color:#888;">${(l[k]||[]).slice(0,2).join(', ')||'—'}</td>`;
 
     if(f.type==='select' && !isViewOnly()){
       const bc = val&&BADGE_COLORS[val] ? BADGE_COLORS[val] : 'f5f4f0;color:#888';
-      // "Make Quote" buttons for BDI team
-      let makeQuoteSection = '';
-      if(k==='bdi_call_status' && team==='sales'){
-        const reqDone = val==='Requirement Collected';
-        const hasReqs = l.requirements && l.requirements.length>0;
-        if(reqDone && hasReqs){
-          makeQuoteSection = renderMakeQuoteButtons(l);
-        }
-      }
       return `<td style="padding:4px 8px;" onclick="event.stopPropagation()">
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;">
         <select onchange="inlineSave('${l.id}','${k}',this.value,'${team}')"
@@ -2403,7 +2402,6 @@ function renderTeamView(team,title){
           <option value="">— select —</option>
           ${(f.options||[]).filter(o=>o).map(o=>`<option value="${o}"${val===o?' selected':''}>${o}</option>`).join('')}
         </select></div>
-        ${makeQuoteSection}
       </td>`;
     }
     if(f.type==='select' && isViewOnly()){
@@ -2543,8 +2541,9 @@ function renderMobileTeamCards(team){
             </div>`;
           }
           const bc = val&&BADGE_COLORS2[val]?BADGE_COLORS2[val]:'f5f4f0;color:#888';
-          const makeQuoteBtn = (k==='bdi_call_status' && val==='Requirement Collected' && team==='sales' && l.requirements && l.requirements.length>0)
-            ? renderMakeQuoteButtons(l) : '';
+          const makeQuoteBtn = (k==='quote_preparation' && team==='sales')
+            ? (l.bdi_call_status==='Requirement Collected' && l.requirements && l.requirements.length>0 ? renderMakeQuoteButtons(l) : '')
+            : '';
           return `<div class="m-field-row">
             <div class="m-field-label">${field.label}</div>
             <select class="m-select" style="background:#${bc};" onchange="inlineSave('${l.id}','${k}',this.value,'${team}');renderMobileTeamCards('${team}')">
