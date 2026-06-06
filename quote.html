@@ -538,7 +538,7 @@
     <div class="cover-border">
       <div class="hatch"></div>
       <div class="logo-area">
-        <img id="cover-logo" src="" alt="Spacioworks">
+        <img id="cover-logo" src="data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 100'><text x='0' y='78' font-family='Georgia,serif' font-size='78' font-weight='700' letter-spacing='-1' fill='%231A1A1A'>SPACI</text><g transform='translate(228,8)'><circle cx='22' cy='22' r='22' fill='%23C9A84C' opacity='0.12'/><text x='0' y='72' font-family='Georgia,serif' font-size='78' font-weight='700' fill='%23C9A84C'>O</text><path d='M14,38 L22,26 L30,38 Z' fill='%23C9A84C'/><rect x='16' y='36' width='12' height='10' fill='%23C9A84C'/></g><text x='278' y='78' font-family='Georgia,serif' font-size='78' font-weight='700' letter-spacing='-1' fill='%231A1A1A'>WORKS</text><text x='2' y='96' font-family='Georgia,serif' font-size='13' letter-spacing='5' fill='%231A1A1A'>TM</text></svg>"http://www.w3.org/2000/svg" viewBox="0 0 500 120" width="500" height="120"><rect width="500" height="120" fill="none"/><text x="10" y="72" font-family="Georgia,serif" font-size="62" font-weight="700" letter-spacing="2" fill="%231A1A1A">SPACI</text><text x="218" y="72" font-family="Georgia,serif" font-size="62" font-weight="700" fill="%23C9A84C">O</text><text x="268" y="72" font-family="Georgia,serif" font-size="62" font-weight="700" letter-spacing="2" fill="%231A1A1A">WORKS</text><text x="10" y="100" font-family="Georgia,serif" font-size="16" letter-spacing="8" fill="%231A1A1A" font-weight="400">I  N  T  E  R  I  O</text><circle cx="204" cy="55" r="18" fill="%23C9A84C" opacity="0.15"/></svg>" alt="Spacioworks" style="height:22mm;object-fit:contain;">
         <p class="tagline">Design.Function.Perfection</p>
       </div>
       <img id="cover-photo" class="cover-photo" src="https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800&q=80" alt="Interior">
@@ -565,7 +565,7 @@
     <div class="page-header">
       <h1>About Us</h1>
       <div class="logo-sm">
-        <img id="about-logo" src="" alt="Spacioworks" style="height:12mm;">
+        <img id="about-logo" src="data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 100'><text x='0' y='78' font-family='Georgia,serif' font-size='78' font-weight='700' letter-spacing='-1' fill='%231A1A1A'>SPACI</text><g transform='translate(228,8)'><circle cx='22' cy='22' r='22' fill='%23C9A84C' opacity='0.12'/><text x='0' y='72' font-family='Georgia,serif' font-size='78' font-weight='700' fill='%23C9A84C'>O</text><path d='M14,38 L22,26 L30,38 Z' fill='%23C9A84C'/><rect x='16' y='36' width='12' height='10' fill='%23C9A84C'/></g><text x='278' y='78' font-family='Georgia,serif' font-size='78' font-weight='700' letter-spacing='-1' fill='%231A1A1A'>WORKS</text><text x='2' y='96' font-family='Georgia,serif' font-size='13' letter-spacing='5' fill='%231A1A1A'>TM</text></svg>"http://www.w3.org/2000/svg" viewBox="0 0 500 120" width="500" height="120"><rect width="500" height="120" fill="none"/><text x="10" y="72" font-family="Georgia,serif" font-size="62" font-weight="700" letter-spacing="2" fill="%231A1A1A">SPACI</text><text x="218" y="72" font-family="Georgia,serif" font-size="62" font-weight="700" fill="%23C9A84C">O</text><text x="268" y="72" font-family="Georgia,serif" font-size="62" font-weight="700" letter-spacing="2" fill="%231A1A1A">WORKS</text><text x="10" y="100" font-family="Georgia,serif" font-size="16" letter-spacing="8" fill="%231A1A1A" font-weight="400">I  N  T  E  R  I  O</text><circle cx="204" cy="55" r="18" fill="%23C9A84C" opacity="0.15"/></svg>" alt="Spacioworks" style="height:12mm;object-fit:contain;">
         <p class="cities">Chennai | Hyderabad | Bengaluru</p>
       </div>
     </div>
@@ -1054,13 +1054,6 @@ function showError(msg) {
 }
 
 // ── LOGO: try to get from existing page logo element ──
-function setLogos(src) {
-  ['cover-logo','about-logo'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.src = src;
-  });
-}
-
 // ── COVER ──
 function renderCover(q, lead) {
   const name = lead ? (lead.client_name || lead.name || '') : '';
@@ -1071,11 +1064,7 @@ function renderCover(q, lead) {
   setText('cv-phone', phone);
   setText('cv-city', city);
 
-  // Try logo from existing embedded src (if parent window)
-  try {
-    const logoImg = window.opener?.document.querySelector('.logo img')?.src || '';
-    if (logoImg) setLogos(logoImg);
-  } catch(e) {}
+  // Logo is hardcoded via base64/SVG
 }
 
 // ── SUMMARY ──
