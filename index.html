@@ -682,6 +682,14 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
               <button class="btn" onclick="exportPriceList()"><i class="ti ti-file-spreadsheet"></i> Export</button>
               <input type="text" id="pl-search" placeholder="Search products..." oninput="renderPriceList()" style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;outline:none;flex:1;min-width:160px;">
             </div>
+            <div id="pl-bulk-bar" style="display:none;background:#1A1A1A;border-radius:10px;padding:10px 16px;margin-bottom:12px;display:none;align-items:center;justify-content:space-between;gap:12px;">
+              <span id="pl-selected-count" style="color:#C9A84C;font-size:13px;font-weight:700;"></span>
+              <div style="display:flex;gap:8px;">
+                <button onclick="plSelectAll()" style="padding:6px 14px;border:1px solid #C9A84C;border-radius:7px;background:transparent;color:#C9A84C;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Select All</button>
+                <button onclick="plDeselectAll()" style="padding:6px 14px;border:1px solid #888;border-radius:7px;background:transparent;color:#aaa;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Deselect All</button>
+                <button onclick="bulkDeleteProducts()" style="padding:6px 14px;border:1px solid #F09595;border-radius:7px;background:#A32D2D;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;"><i class="ti ti-trash"></i> Delete Selected</button>
+              </div>
+            </div>
             <div id="pricelist-table"></div>
           </div>
 
@@ -1057,6 +1065,49 @@ async function loadPriceList(){
   if(!error) priceListData = data||[];
 }
 
+// ─── PRICE LIST BULK DELETE ──────────────────────────────────────────────────
+function plGetSelected(){
+  return [...document.querySelectorAll('.pl-row-check:checked')].map(el=>el.dataset.id);
+}
+
+function plRowCheckChange(){
+  const selected = plGetSelected();
+  const bar = document.getElementById('pl-bulk-bar');
+  const countEl = document.getElementById('pl-selected-count');
+  if(selected.length > 0){
+    bar.style.display='flex';
+    countEl.textContent = selected.length + ' product' + (selected.length>1?'s':'') + ' selected';
+  } else {
+    bar.style.display='none';
+  }
+  // Update select-all checkbox state
+  const all = document.querySelectorAll('.pl-row-check');
+  const allChk = document.getElementById('pl-check-all');
+  if(allChk) allChk.checked = all.length>0 && selected.length===all.length;
+}
+
+function plToggleAll(checked){
+  document.querySelectorAll('.pl-row-check').forEach(el=>el.checked=checked);
+  plRowCheckChange();
+}
+
+function plSelectAll(){ plToggleAll(true); }
+function plDeselectAll(){ plToggleAll(false); }
+
+async function bulkDeleteProducts(){
+  const ids = plGetSelected();
+  if(!ids.length){ toast('No products selected'); return; }
+  if(!confirm('Delete ' + ids.length + ' product(s)? This cannot be undone.')) return;
+  // Delete in batches
+  const {error} = await sb.from('price_list').delete().in('id', ids);
+  if(error){ toast('Error: '+error.message); return; }
+  toast('✓ Deleted '+ids.length+' product(s)');
+  document.getElementById('pl-bulk-bar').style.display='none';
+  await loadPriceList();
+  renderPriceList();
+}
+
+
 function renderPriceList(){
   const el = document.getElementById('pricelist-table');
   if(!el) return;
@@ -1077,6 +1128,9 @@ function renderPriceList(){
       <div style="font-size:11px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.06em;padding:6px 0;border-bottom:2px solid #C9A84C;margin-bottom:8px;">${cat} (${prods.length})</div>
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead><tr>
+          <th style="padding:7px 8px;background:#1A1A1A;text-align:center;width:36px;">
+            <input type="checkbox" id="pl-check-all" onchange="plToggleAll(this.checked)" style="cursor:pointer;width:14px;height:14px;accent-color:#C9A84C;">
+          </th>
           <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;">Image</th>
           <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;">Item Code</th>
           <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;">Item Name</th>
@@ -1090,6 +1144,9 @@ function renderPriceList(){
           <th style="padding:7px 6px;background:#1A1A1A;"></th>
         </tr></thead>
         <tbody>${prods.map((p,i)=>`<tr style="background:${i%2===0?'#fff':'#fafafa'};border-bottom:1px solid #f0f0f0;">
+          <td style="padding:6px 8px;text-align:center;" onclick="event.stopPropagation()">
+            <input type="checkbox" class="pl-row-check" data-id="${p.id}" onchange="plRowCheckChange()" style="cursor:pointer;width:14px;height:14px;accent-color:#C9A84C;">
+          </td>
           <td style="padding:6px 8px;">
             ${p.image_url?`<img src="${p.image_url}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #eee;" onerror="this.style.display='none'">`:'<div style="width:48px;height:48px;background:#f5f4f0;border-radius:6px;display:flex;align-items:center;justify-content:center;"><i class=\"ti ti-photo\" style=\"color:#ccc;font-size:18px;\"></i></div>'}
           </td>
