@@ -2970,7 +2970,7 @@ async function addNote(){
 // ── SETTINGS PAGE ─────────────────────────────────────────────────────────
 function showSettingsPanel(panel){
   document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden'));
-  if(panel==='pricelist') renderPriceList();
+  if(panel==='pricelist'){ loadPriceList().then(()=>renderPriceList()); }
   const target = document.getElementById('settings-panel-'+panel);
   if(target) target.classList.remove('hidden');
   document.querySelectorAll('.settings-nav-item').forEach(i=>i.classList.remove('active'));
