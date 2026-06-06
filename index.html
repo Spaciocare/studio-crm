@@ -1274,33 +1274,64 @@ async function importPriceList(input){
   const file = input.files[0];
   const reader = new FileReader();
   reader.onload = async e => {
-    const wb = XLSX.read(e.target.result, {type:'binary'});
+    // Use cellFormula:false so formula cells return cached value, not formula string
+    const wb = XLSX.read(e.target.result, {type:'binary', cellFormula:false, cellNF:false, cellDates:true});
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws);
+    // raw:false converts numbers properly; defval:'' fills empty cells
+    const rows = XLSX.utils.sheet_to_json(ws, {raw:false, defval:''});
     if(!rows.length){ toast('No data found'); return; }
+
+    // Helper: safely parse a number from a cell (handles formula strings like =I2*1.15)
+    function safeNum(val){
+      if(val===null||val===undefined||val==='') return null;
+      const n = parseFloat(String(val).replace(/[^0-9.\-]/g,''));
+      return isNaN(n) ? null : n;
+    }
+
+    // Helper: get value trying multiple possible column name variants
+    function col(r, ...keys){
+      for(const k of keys){
+        if(r[k]!==undefined && r[k]!==null && r[k]!=='') return r[k];
+      }
+      return '';
+    }
+
     toast('Importing '+rows.length+' products...');
     const products = rows.map(r=>{
-      const itemName = String(r['Item Name']||r['Item name']||r['name']||r['Name']||'').trim();
-      const uom = String(r['UOM']||r['Product UOM']||r['Unit']||r['unit']||'SQFT').trim();
+      const itemName = String(col(r,'Item name','Item Name','name','Name')).trim();
+      const uom = String(col(r,'UOM','Product UOM','Unit','unit')||'SQFT').trim();
+      const rate = safeNum(col(r,'per unit cost','Per Unit Cost','Per unit cost','Cost','Rate','rate','Price'));
+      const oldPrice = safeNum(col(r,'old price','Old Price','Old price','old_price'));
+      const discount = safeNum(col(r,'discount','Discount'));
       return {
-        sku: String(r['Item Code']||r['SKU']||r['sku']||'').trim()||null,
+        sku: String(col(r,'Item Code','Item code','SKU','sku')).trim()||null,
         name: itemName,
         item_name: itemName,
-        description: String(r['Description']||r['description']||'').trim(),
-        brand: String(r['Brand']||r['brand']||'').trim()||null,
+        description: String(col(r,'Description','description')).trim(),
+        brand: String(col(r,'Brand','brand')).trim()||null,
         uom, unit: uom,
-        rate: parseFloat(r['Per Unit Cost']||r['Cost']||r['Rate']||r['rate']||r['Price']||0),
-        old_price: parseFloat(r['Old Price']||r['old_price']||'')||null,
-        discount: parseFloat(r['Discount']||r['discount']||'')||null,
-        talent_furniture: String(r['Talent Furniture']||r['talent_furniture']||'').trim()||null,
-        category: String(r['Category']||r['category']||r['Room']||'General').trim(),
-        image_url: String(r['Product Image']||r['Image']||r['image_url']||'').trim()||null,
+        rate: rate||0,
+        old_price: oldPrice,
+        discount: discount,
+        talent_furniture: String(col(r,'talent furniture','Talent Furniture','talent_furniture')).trim()||null,
+        category: String(col(r,'Category','category','Room')||'General').trim(),
+        image_url: String(col(r,'Product Image','Image','image_url')).trim()||null,
         active: true
       };
     }).filter(p=>p.name);
-    const {error} = await sb.from('price_list').insert(products);
-    if(error){ toast('Import error: '+error.message); return; }
-    toast('✓ Imported '+products.length+' products!');
+
+    if(!products.length){ toast('No valid rows found. Check column headers.'); return; }
+
+    // Import in batches of 100
+    let imported = 0;
+    for(let i=0; i<products.length; i+=100){
+      const batch = products.slice(i,i+100);
+      const {error} = await sb.from('price_list').insert(batch);
+      if(error){ toast('Import error at row '+(i+1)+': '+error.message); return; }
+      imported += batch.length;
+      toast('Importing... '+imported+'/'+products.length);
+    }
+    toast('✓ Imported '+imported+' products!');
     await loadPriceList();
     renderPriceList();
   };
