@@ -842,12 +842,27 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
       <span onclick="closeAllModals()" style="cursor:pointer;color:#bbb;"><i class="ti ti-x"></i></span>
     </div>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">SKU Number</label><input id="pl-sku" type="text" placeholder="e.g. KIT-001" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+      <div class="form-group"><label class="form-label">Item Code</label><input id="pl-sku" type="text" placeholder="e.g. KIT-001" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+      <div class="form-group"><label class="form-label">Item Name *</label><input id="pl-item-name" type="text" placeholder="e.g. Kitchen Base Storage" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+      <div class="form-group" style="grid-column:1/-1"><label class="form-label">Description</label><textarea id="pl-desc" rows="2" placeholder="Material details, finish, dimensions..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;resize:vertical;"></textarea></div>
+      <div class="form-group"><label class="form-label">Brand</label><input id="pl-brand" type="text" placeholder="e.g. Hettich, Hafele" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+      <div class="form-group"><label class="form-label">UOM</label>
+        <select id="pl-unit" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;">
+          <option>SQFT</option><option>RFT</option><option>Nos</option><option>Set</option><option>Lump sum</option><option>Meter</option><option>Box</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Per Unit Cost (₹) *</label><input id="pl-rate" type="number" placeholder="0" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+      <div class="form-group"><label class="form-label">Old Price (₹)</label><input id="pl-old-price" type="number" placeholder="0" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+      <div class="form-group"><label class="form-label">Discount (%)</label><input id="pl-discount" type="number" placeholder="0" min="0" max="100" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
+      <div class="form-group"><label class="form-label">Talent Furniture</label>
+        <select id="pl-talent" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;">
+          <option value="">— select —</option><option value="Yes">Yes</option><option value="No">No</option>
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Category / Room</label><input id="pl-category" type="text" list="pl-cat-list" placeholder="e.g. Kitchen, Living, Foyer" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"><datalist id="pl-cat-list"></datalist></div>
-      <div class="form-group" style="grid-column:1/-1"><label class="form-label">Product Description *</label><textarea id="pl-desc" rows="2" placeholder="Material details, brand, finish, dimensions..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;resize:vertical;"></textarea></div>
       <div class="form-group" style="grid-column:1/-1"><label class="form-label">Product Image URL</label>
         <div style="display:flex;gap:8px;align-items:center;">
-          <input id="pl-image-url" type="text" placeholder="Paste image URL or upload below" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;">
+          <input id="pl-image-url" type="text" placeholder="Paste image URL or upload" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;">
           <label style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;background:#f9f8f5;">
             <i class="ti ti-upload"></i> Upload
             <input type="file" accept="image/*" style="display:none" onchange="uploadProductImage(this)">
@@ -855,12 +870,6 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
         </div>
         <div id="pl-image-preview" style="margin-top:8px;"></div>
       </div>
-      <div class="form-group"><label class="form-label">UOM (Unit of Measure)</label>
-        <select id="pl-unit" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;">
-          <option>SQFT</option><option>RFT</option><option>Nos</option><option>Set</option><option>Lump sum</option><option>Meter</option><option>Box</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Product Cost (₹) *</label><input id="pl-rate" type="number" placeholder="0" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:inherit;font-size:13px;outline:none;"></div>
     </div>
     <input type="hidden" id="pl-edit-id">
     <input type="hidden" id="pl-name">
@@ -1068,20 +1077,34 @@ function renderPriceList(){
       <div style="font-size:11px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.06em;padding:6px 0;border-bottom:2px solid #C9A84C;margin-bottom:8px;">${cat} (${prods.length})</div>
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead><tr>
-          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;">Image</th>
-          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;">SKU</th>
-          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;">Description</th>
-          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;">UOM</th>
-          <th style="padding:7px 10px;background:#1A1A1A;color:#C9A84C;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;">Cost (₹)</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;">Image</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;">Item Code</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;">Item Name</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;">Description</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;font-size:10px;font-weight:700;text-transform:uppercase;">Brand</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;">UOM</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;">Per Unit Cost</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;">Old Price</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;">Discount %</th>
+          <th style="padding:7px 8px;background:#1A1A1A;color:#C9A84C;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;">Talent Furniture</th>
           <th style="padding:7px 6px;background:#1A1A1A;"></th>
         </tr></thead>
         <tbody>${prods.map((p,i)=>`<tr style="background:${i%2===0?'#fff':'#fafafa'};border-bottom:1px solid #f0f0f0;">
-          <td style="padding:8px 10px;font-weight:600;color:#1a1a1a;">${p.name}</td>
-          <td style="padding:8px 10px;color:#888;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.description||'—'}</td>
-          <td style="padding:8px 10px;text-align:center;color:#555;">${p.unit||'SQFT'}</td>
-          <td style="padding:8px 10px;text-align:right;font-weight:600;color:#1a1a1a;">₹${Number(p.rate||0).toLocaleString('en-IN')}</td>
-          <td style="padding:8px 10px;text-align:center;">
-            <span style="background:${p.active!==false?'#EAF3DE':'#f5f4f0'};color:${p.active!==false?'#27500A':'#888'};border-radius:99px;padding:2px 8px;font-size:10px;font-weight:600;">${p.active!==false?'Active':'Inactive'}</span>
+          <td style="padding:6px 8px;">
+            ${p.image_url?`<img src="${p.image_url}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #eee;" onerror="this.style.display='none'">`:'<div style="width:48px;height:48px;background:#f5f4f0;border-radius:6px;display:flex;align-items:center;justify-content:center;"><i class=\"ti ti-photo\" style=\"color:#ccc;font-size:18px;\"></i></div>'}
+          </td>
+          <td style="padding:8px;color:#888;font-size:11px;white-space:nowrap;">${p.sku||'—'}</td>
+          <td style="padding:8px;font-weight:600;font-size:12px;color:#1a1a1a;max-width:160px;">${p.item_name||p.name||'—'}</td>
+          <td style="padding:8px;color:#888;font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.description||'—'}</td>
+          <td style="padding:8px;font-size:12px;color:#555;white-space:nowrap;">${p.brand||'—'}</td>
+          <td style="padding:8px;text-align:center;color:#555;font-size:12px;">${p.uom||p.unit||'SQFT'}</td>
+          <td style="padding:8px;text-align:right;font-weight:700;color:#1a1a1a;font-size:13px;">₹${Number(p.rate||0).toLocaleString('en-IN')}</td>
+          <td style="padding:8px;text-align:right;color:#888;font-size:12px;">${p.old_price?'₹'+Number(p.old_price).toLocaleString('en-IN'):'—'}</td>
+          <td style="padding:8px;text-align:center;font-size:12px;">
+            ${p.discount?`<span style="background:#FDF3E7;color:#BA7517;border-radius:99px;padding:2px 8px;font-weight:600;">${p.discount}%</span>`:'—'}
+          </td>
+          <td style="padding:8px;text-align:center;font-size:12px;">
+            ${p.talent_furniture==='Yes'?`<span style="background:#EAF3DE;color:#27500A;border-radius:99px;padding:2px 8px;font-weight:600;">✓ Yes</span>`:'—'}
           </td>
           <td style="padding:8px 6px;text-align:center;white-space:nowrap;">
             <button onclick="editProduct('${p.id}')" style="border:1px solid #ddd;border-radius:6px;background:#fff;padding:3px 7px;cursor:pointer;font-size:12px;margin-right:3px;"><i class="ti ti-edit"></i></button>
@@ -1100,15 +1123,12 @@ function renderPriceList(){
 function openAddProduct(){
   editingProductId = null;
   document.getElementById('product-modal-title').textContent='Add Product';
-  document.getElementById('pl-sku').value='';
-  document.getElementById('pl-name').value='';
-  document.getElementById('pl-category').value='';
-  document.getElementById('pl-desc').value='';
+  ['pl-sku','pl-item-name','pl-desc','pl-brand','pl-rate','pl-old-price','pl-discount','pl-image-url','pl-category'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('pl-unit').value='SQFT';
-  document.getElementById('pl-rate').value='';
-  document.getElementById('pl-image-url').value='';
+  document.getElementById('pl-talent').value='';
   document.getElementById('pl-image-preview').innerHTML='';
   document.getElementById('pl-edit-id').value='';
+  document.getElementById('pl-name').value='';
   openModal('product');
 }
 
@@ -1118,14 +1138,18 @@ function editProduct(id){
   editingProductId = id;
   document.getElementById('product-modal-title').textContent='Edit Product';
   document.getElementById('pl-sku').value=p.sku||'';
-  document.getElementById('pl-name').value=p.name||'';
-  document.getElementById('pl-category').value=p.category||'';
+  document.getElementById('pl-item-name').value=p.item_name||p.name||'';
+  document.getElementById('pl-name').value=p.item_name||p.name||'';
   document.getElementById('pl-desc').value=p.description||'';
+  document.getElementById('pl-brand').value=p.brand||'';
   document.getElementById('pl-unit').value=p.uom||p.unit||'SQFT';
   document.getElementById('pl-rate').value=p.rate||0;
+  document.getElementById('pl-old-price').value=p.old_price||'';
+  document.getElementById('pl-discount').value=p.discount||'';
+  document.getElementById('pl-talent').value=p.talent_furniture||'';
+  document.getElementById('pl-category').value=p.category||'';
   document.getElementById('pl-image-url').value=p.image_url||'';
   document.getElementById('pl-edit-id').value=id;
-  // Show image preview
   const prev = document.getElementById('pl-image-preview');
   if(p.image_url) prev.innerHTML=`<img src="${p.image_url}" style="max-height:80px;border-radius:6px;border:1px solid #eee;" onerror="this.style.display='none'">`;
   else prev.innerHTML='';
@@ -1133,19 +1157,22 @@ function editProduct(id){
 }
 
 async function saveProduct(){
-  const desc = document.getElementById('pl-desc').value.trim();
+  const itemName = document.getElementById('pl-item-name').value.trim();
   const rate = parseFloat(document.getElementById('pl-rate').value)||0;
-  if(!desc){ toast('Product description is required'); return; }
-  // Use first line of description as name for backward compat
-  const name = desc.split('\n')[0].substring(0,80)||desc;
+  if(!itemName){ toast('Item Name is required'); return; }
   const data = {
-    name,
-    sku: document.getElementById('pl-sku').value.trim(),
-    category: document.getElementById('pl-category').value.trim()||'General',
-    description: desc,
+    name: itemName,
+    item_name: itemName,
+    sku: document.getElementById('pl-sku').value.trim()||null,
+    description: document.getElementById('pl-desc').value.trim(),
+    brand: document.getElementById('pl-brand').value.trim()||null,
     uom: document.getElementById('pl-unit').value,
     unit: document.getElementById('pl-unit').value,
     rate,
+    old_price: parseFloat(document.getElementById('pl-old-price').value)||null,
+    discount: parseFloat(document.getElementById('pl-discount').value)||null,
+    talent_furniture: document.getElementById('pl-talent').value||null,
+    category: document.getElementById('pl-category').value.trim()||'General',
     image_url: document.getElementById('pl-image-url').value.trim()||null,
     active: true
   };
@@ -1196,20 +1223,24 @@ async function importPriceList(input){
     if(!rows.length){ toast('No data found'); return; }
     toast('Importing '+rows.length+' products...');
     const products = rows.map(r=>{
-      const desc = String(r['Product Description']||r['Description']||r['description']||r['name']||r['Name']||'').trim();
-      const uom = String(r['Product UOM']||r['UOM']||r['Unit']||r['unit']||'SQFT').trim();
+      const itemName = String(r['Item Name']||r['Item name']||r['name']||r['Name']||'').trim();
+      const uom = String(r['UOM']||r['Product UOM']||r['Unit']||r['unit']||'SQFT').trim();
       return {
-        sku: String(r['SKU Number']||r['SKU']||r['sku']||'').trim()||null,
-        name: desc.substring(0,80)||desc,
+        sku: String(r['Item Code']||r['SKU']||r['sku']||'').trim()||null,
+        name: itemName,
+        item_name: itemName,
+        description: String(r['Description']||r['description']||'').trim(),
+        brand: String(r['Brand']||r['brand']||'').trim()||null,
+        uom, unit: uom,
+        rate: parseFloat(r['Per Unit Cost']||r['Cost']||r['Rate']||r['rate']||r['Price']||0),
+        old_price: parseFloat(r['Old Price']||r['old_price']||'')||null,
+        discount: parseFloat(r['Discount']||r['discount']||'')||null,
+        talent_furniture: String(r['Talent Furniture']||r['talent_furniture']||'').trim()||null,
         category: String(r['Category']||r['category']||r['Room']||'General').trim(),
-        description: desc,
-        uom,
-        unit: uom,
-        rate: parseFloat(r['Product Cost']||r['Cost']||r['Rate']||r['rate']||r['Price']||0),
         image_url: String(r['Product Image']||r['Image']||r['image_url']||'').trim()||null,
         active: true
       };
-    }).filter(p=>p.description);
+    }).filter(p=>p.name);
     const {error} = await sb.from('price_list').insert(products);
     if(error){ toast('Import error: '+error.message); return; }
     toast('✓ Imported '+products.length+' products!');
@@ -1224,9 +1255,19 @@ function exportPriceList(){
   if(!priceListData.length){ toast('No products to export'); return; }
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(priceListData.map(p=>({
-    'SKU Number':p.sku||'','Product Description':p.description||p.name||'','Category':p.category||'','Product UOM':p.uom||p.unit||'SQFT','Product Cost':p.rate||0,'Product Image':p.image_url||''
+    'Item Code':p.sku||'',
+    'Item Name':p.item_name||p.name||'',
+    'Description':p.description||'',
+    'Brand':p.brand||'',
+    'UOM':p.uom||p.unit||'SQFT',
+    'Per Unit Cost':p.rate||0,
+    'Old Price':p.old_price||'',
+    'Discount':p.discount||'',
+    'Talent Furniture':p.talent_furniture||'',
+    'Category':p.category||'',
+    'Product Image':p.image_url||''
   })));
-  ws['!cols']=[{wch:15},{wch:50},{wch:20},{wch:12},{wch:14},{wch:50}];
+  ws['!cols']=[{wch:14},{wch:30},{wch:40},{wch:20},{wch:10},{wch:14},{wch:12},{wch:10},{wch:16},{wch:16},{wch:50}];
   XLSX.utils.book_append_sheet(wb,ws,'Price List');
   XLSX.writeFile(wb,'Spacioworks_PriceList_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
