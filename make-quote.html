@@ -163,7 +163,11 @@ async function init() {
     }
     if (target) {
       G.quoteId = target.id;
-      G.rooms = target.rooms || [];
+      // rooms may come as string (JSONB) or array
+      let rooms = target.rooms || [];
+      if (typeof rooms === 'string') { try { rooms = JSON.parse(rooms); } catch(e) { rooms = []; } }
+      G.rooms = Array.isArray(rooms) ? rooms : [];
+      console.log('Loaded draft rooms:', G.rooms.length, 'rooms');
       document.getElementById('q-discount').value = target.discount || 0;
       document.getElementById('q-notes').value = target.notes || '';
       if (target.valid_till) document.getElementById('q-valid-till').value = target.valid_till;
@@ -344,7 +348,7 @@ function esc(s) { return (s || '').toString().replace(/&/g, '&amp;').replace(/</
 async function buildPayload(status) {
   const leadId = new URLSearchParams(location.search).get('lead');
   return {
-    lead_id: leadId, status, rooms: G.rooms,
+    lead_id: leadId, status, rooms: JSON.parse(JSON.stringify(G.rooms)),
     discount: parseFloat(document.getElementById('q-discount').value || 0),
     notes: document.getElementById('q-notes').value,
     valid_till: document.getElementById('q-valid-till').value || null,
@@ -359,15 +363,19 @@ function toast(msg) {
 
 async function saveDraft() {
   const payload = await buildPayload('draft');
+  let result = [];
   if (G.quoteId) {
-    await api('quotes?id=eq.' + G.quoteId, 'PATCH', payload);
+    result = await api('quotes?id=eq.' + G.quoteId, 'PATCH', payload);
+    console.log('PATCH result:', result);
   } else {
     const d = new Date();
     const dateStr = d.getDate()+'/'+(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(-2);
     payload.quote_number = 'Quote - ' + dateStr;
-    const data = await api('quotes', 'POST', payload);
-    if (data[0]) { G.quoteId = data[0].id; document.title = 'Make Quote — ' + payload.quote_number; }
+    result = await api('quotes', 'POST', payload);
+    console.log('POST result:', result);
+    if (result[0]) { G.quoteId = result[0].id; document.title = 'Make Quote — ' + payload.quote_number; }
   }
+  if(!result || !result.length){ toast('⚠ Save may have failed — check connection'); return; }
   toast('✓ Draft saved!');
 }
 
