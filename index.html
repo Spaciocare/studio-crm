@@ -680,6 +680,7 @@ td:has(.inline-select):hover,td:has(.inline-input):hover{background:#fafafa;}
               <button class="btn btn-primary" onclick="openAddProduct()"><i class="ti ti-plus"></i> Add Product</button>
               <label class="btn" style="cursor:pointer;"><i class="ti ti-upload"></i> Import from Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="importPriceList(this)"></label>
               <button class="btn" onclick="exportPriceList()"><i class="ti ti-file-spreadsheet"></i> Export</button>
+              <button class="btn btn-danger" onclick="deleteAllProducts()" style="border-color:#F09595;color:#A32D2D;"><i class="ti ti-trash"></i> Delete All</button>
               <input type="text" id="pl-search" placeholder="Search products..." oninput="renderPriceList()" style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;outline:none;flex:1;min-width:160px;">
             </div>
             <div id="pl-bulk-bar" style="display:none;background:#1A1A1A;border-radius:10px;padding:10px 16px;margin-bottom:12px;display:none;align-items:center;justify-content:space-between;gap:12px;">
@@ -1098,11 +1099,26 @@ async function bulkDeleteProducts(){
   const ids = plGetSelected();
   if(!ids.length){ toast('No products selected'); return; }
   if(!confirm('Delete ' + ids.length + ' product(s)? This cannot be undone.')) return;
-  // Delete in batches
-  const {error} = await sb.from('price_list').delete().in('id', ids);
-  if(error){ toast('Error: '+error.message); return; }
-  toast('✓ Deleted '+ids.length+' product(s)');
+  // Delete in batches of 50 to avoid Supabase limit
+  let deleted = 0;
+  for(let i=0; i<ids.length; i+=50){
+    const batch = ids.slice(i, i+50);
+    const {error} = await sb.from('price_list').delete().in('id', batch);
+    if(error){ toast('Error: '+error.message); return; }
+    deleted += batch.length;
+    toast('Deleting... '+deleted+'/'+ids.length);
+  }
+  toast('✓ Deleted '+deleted+' product(s)');
   document.getElementById('pl-bulk-bar').style.display='none';
+  await loadPriceList();
+  renderPriceList();
+}
+
+async function deleteAllProducts(){
+  if(!confirm('Delete ALL products in the price list? This cannot be undone.')) return;
+  const {error} = await sb.from('price_list').delete().neq('id','00000000-0000-0000-0000-000000000000');
+  if(error){ toast('Error: '+error.message); return; }
+  toast('✓ All products deleted');
   await loadPriceList();
   renderPriceList();
 }
