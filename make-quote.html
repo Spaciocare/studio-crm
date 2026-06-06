@@ -132,7 +132,7 @@ async function api(path, method, body) {
     const text = await r.text();
     if (!text) return [];
     const d = JSON.parse(text);
-    if (!r.ok) { console.warn('API error', r.status, d); return []; }
+    if (!r.ok) { console.warn('API error', r.status, JSON.stringify(d)); return []; }
     return Array.isArray(d) ? d : [d];
   } catch(e) { console.error('API fail:', e); return []; }
 }
@@ -370,7 +370,7 @@ async function saveDraft() {
   } else {
     const d = new Date();
     const dateStr = d.getDate()+'/'+(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(-2);
-    payload.quote_number = 'Quote - ' + dateStr;
+    payload.quote_number = dateStr;
     result = await api('quotes', 'POST', payload);
     console.log('POST result:', result);
     if (result[0]) { G.quoteId = result[0].id; document.title = 'Make Quote — ' + payload.quote_number; }
